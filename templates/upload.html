@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Product</title>
+</head>
+<body>
+    <h1>{{ name }}</h1>
+    <h2>Upload Product</h2>
+    <form action="" method="POST" enctype="multipart/form-data">
+        <label for="name">Product Name:</label>
+        <input type="text" id="name" name="name" required><br><br>
+
+        <label for="price">Price:</label>
+        <input type="number" id="price" name="price" step="0.01" required><br><br>
+
+        <label for="quantity">Quantity:</label>
+        <input type="number" id="quantity" name="quantity" required><br><br>
+
+        <label for="category">Category:</label>
+        <select id="category" name="category" required>
+            <option value="electronics">Electronics</option>
+            <option value="grocery">Grocery</option>
+        </select><br><br>
+
+        <label for="desc">Description:</label>
+        <input type="text" id="desc" name="desc" required><br><br>
+
+        <label for="image">Upload Image:</label>
+        <input type="file" id="image" name="image" accept="image/*" required><br><br>
+
+        <button onclick="submit">ADD PRODUCT</button>
+    </form>
+
+</body>
+</html>

@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <meta charset="UTF-8">
+    <title>Business</title>
+</head>
+<body>
+<a href="{{ url_for('consumer') }}">Switch Account</a>
+<a href="{{ url_for('logout') }}">Logout</a>
+<a href="{{ url_for('add_address') }}">Add Address</a>
+<a href="{{ url_for('upload') }}">Add Product</a>
+<a href="{{ url_for('view_products') }}">My Products</a>
+<h1>welcome Business User:{{ name }}</h1>
+</body>
+</html>
