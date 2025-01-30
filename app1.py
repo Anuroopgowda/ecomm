@@ -176,6 +176,13 @@ def cart():
 
     return render_template('cart.html', products=products)
 
+@app.route('/delete/<int:product_id>', methods = ['GET'])
+def delete(product_id):
+    flash("Record Has Been Deleted Successfully")
+    cur = mysql.connection.cursor()
+    cur.execute("DELETE FROM products WHERE product_id=%s", (product_id,))
+    mysql.connection.commit()
+    return redirect(url_for('view_products'))
 
 @app.route('/logout')
 @login_required

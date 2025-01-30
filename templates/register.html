@@ -1,33 +1,48 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register User</title>
+    <link rel="stylesheet" href="/static/style/style.css">
+    <script>
+        function validateLogin() {
+            var name = document.getElementById("name").value;
+            var email = document.getElementById("email").value;
+            var mobileNumber = document.getElementById("mobile_number").value;
+            var password = document.getElementById("password").value;
+
+            // Placeholder for login credentials
+            var storedEmail = "user@example.com";
+            var storedPassword = "password123";
+
+            // If the input matches stored credentials
+            if (email === storedEmail && password === storedPassword) {
+                alert("Login credentials cannot be the same as registration details.");
+                return false; // Prevent form submission
+            }
+            return true; // Allow form submission
+        }
+    </script>
 </head>
 <body>
+    <div class="form-container">
+        <h1>Register User</h1>
+        <form method="post" action="/register" onsubmit="return validateLogin()">
+            <label for="name">Name:</label>
+            <input type="text" id="name" name="name" required><br>
 
-    <h1>Register User</h1>
-    <form method='post' action="/register">
-        <!-- Input for Name -->
-        <label for="name">Name:</label>
-        <input type="text" id="name" name="name" required><br>
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" required><br>
 
-        <!-- Input for Email -->
-        <label for="email">Email:</label>
-        <input type="email" id="email" name="email" required><br>
+            <label for="mobile_number">Mobile Number:</label>
+            <input type="text" id="mobile_number" name="mobile_number" required><br>
 
-        <!-- Input for Mobile Number -->
-        <label for="mobile_number">Mobile Number:</label>
-        <input type="text" id="mobile_number" name="mobile_number" required><br>
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" required><br>
 
-        <!-- Input for Address -->
-        <label for="password">Password:</label>
-        <input type="password" id="password" name="password" required><br>
-
-        <!-- Submit Button -->
-        <button type="submit" onclick="submit">Register</button>
-    </form>
+            <button type="submit">Register</button>
+        </form>
+    </div>
 </body>
 </html>

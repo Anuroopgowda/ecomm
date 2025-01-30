@@ -2,26 +2,43 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>INDEX</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link rel="stylesheet" href="static/style/style.css">
+    <script>
+        window.onload = function() {
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        alert("{{ message }}");
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        };
+    </script>
 </head>
 <body>
-<h1>Welcome</h1>
-<form action="/login" method="post">
-  <label>Email:</label>
-  <input type="email" name="email" required><br>
+    <div class="container">
+        <h1>Welcome</h1>
+        <form action="/login" method="post">
+            <label>Email:</label>
+            <input type="email" name="email" required><br>
 
-  <label>Password:</label>
-  <input type="password" name="password" required><br>
+            <label>Password:</label>
+            <input type="password" name="password" required><br>
 
-  <label>Account Type:</label>
-  <select name="account_type" required>
-    <option value="business">Business Account</option>
-    <option value="consumer">Consumer Account</option>
-  </select><br>
+            <label>Account Type:</label>
+            <select name="account_type" required>
+                <option value="business">Business Account</option>
+                <option value="consumer">Consumer Account</option>
+            </select><br>
 
-  <button type="submit">Login</button>
-</form>
-<a href="{{ url_for('register') }}">Register</a>
-
+            <button type="submit">Login</button>
+        </form>
+        <div class="new-user-section">
+            <p>New User?</p>
+            <a class="new-user-button" href="{{ url_for('register') }}">Register</a>
+        </div>
+    </div>
 </body>
 </html>
