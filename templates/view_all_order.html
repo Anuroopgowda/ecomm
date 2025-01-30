@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Your Orders</title>
+</head>
+<body>
+    <h2>Your Orders</h2>
+
+    {% if orders %}
+        <ul>
+            {% for order in orders %}
+                <li>Order ID: {{ order[0] }} | Product ID: {{ order[1] }} | Quantity: {{ order[3] }} | Total Price: ₹{{ order[4] }} | Address ID: {{ order[5] }}</li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No orders placed yet.</p>
+    {% endif %}
+</body>
+</html>

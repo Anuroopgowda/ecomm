@@ -84,13 +84,7 @@ class Address:
                 CREATE TABLE IF NOT EXISTS userAddress (
                     address_id INT AUTO_INCREMENT PRIMARY KEY,
                     user_id INT,
-                    street_no INT,
-                    address_line1 VARCHAR(255) NOT NULL,
-                    address_line2 VARCHAR(255),
-                    city VARCHAR(20) NOT NULL,
-                    region VARCHAR(100),
-                    postal_code VARCHAR(20),
-                    country VARCHAR(100),
+                    address VARCHAR(255),
                     FOREIGN KEY (user_id) REFERENCES userAuth(id)
                 )
             ''')
@@ -101,14 +95,22 @@ class Address:
     def add_address(u_id, street_no, address_line1, address_line2, city, region, postal_code, country):
         try:
             # Connect to the database and execute the query
+            str1=" ".join(filter(None, map(str, [
+                  street_no,
+                  address_line1,
+              address_line2,
+                  city,
+                  region,
+                 postal_code,
+                  country
+            ])))
             cursor = mysql.connection.cursor()
             query = '''
                 INSERT INTO userAddress (
-                    user_id, street_no, address_line1, address_line2,
-                    city, region, postal_code, country
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                    user_id, address
+                ) VALUES (%s, %s)
             '''
-            cursor.execute(query, (u_id, street_no, address_line1, address_line2, city, region, postal_code, country))
+            cursor.execute(query, (u_id, str1))
             mysql.connection.commit()
             cursor.close()
             return True  # Successfully inserted the address
@@ -116,6 +118,22 @@ class Address:
             # Log the error for debugging purposes
             print(f"Error during address insertion: {e}")
             return False  # Insertion failed
+
+    @staticmethod
+    def get_user_addresses(user_id):
+        try:
+            cursor = mysql.connection.cursor()
+            cursor.execute('SELECT * FROM userAddress WHERE user_id=%s', (user_id,))
+            user = cursor.fetchall()
+            cursor.close()
+            if user:
+                # Return user details as a dictionary
+                return user
+            return None
+        except Exception as e:
+            print(f"Error retrieving user by ID: {e}")
+            return None
+
 
 class Product:
     @staticmethod
@@ -173,6 +191,22 @@ class Product:
                 print(f"Error during product insertion: {e}")
                 return False
 
+    @staticmethod
+    def get_product_by_id(product_id):
+        try:
+            cursor = mysql.connection.cursor()
+            cursor.execute('SELECT * FROM products WHERE product_id=%s', (product_id,))
+            user = cursor.fetchone()
+            cursor.close()
+            if user:
+                # Return user details as a dictionary
+                return user
+            return None
+        except Exception as e:
+            print(f"Error retrieving user by ID: {e}")
+            return None
+
+
 # CART
 class Cart:
     @staticmethod
@@ -212,4 +246,42 @@ class Cart:
             print(f"Error during  insertion: {e}")
             return False  # Insertion failed
 
+
+class Order:
+    @staticmethod
+    def create_order_table():
+        with app.app_context():
+            cursor = mysql.connection.cursor()
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS orders (
+                    order_id INT AUTO_INCREMENT PRIMARY KEY,
+                    user_id INT NOT NULL,
+                    product_id INT NOT NULL,
+                    price INT NOT NULL,
+                    quantity INT NOT NULL,
+                    address_id INT NOT NULL,
+                    
+                    FOREIGN KEY (user_id) REFERENCES userAuth(id) ON DELETE CASCADE,
+                    FOREIGN KEY (address_id) REFERENCES userAddress(address_id) ON DELETE CASCADE,
+                    FOREIGN KEY (product_id) REFERENCES products(product_id) ON DELETE CASCADE
+                )
+            ''')
+
+            mysql.connection.commit()
+            cursor.close()
+
+    @staticmethod
+    def add_order(user_id,product_id,price,quantity,address_id):
+        try:
+            # Insert into the database
+            cursor = mysql.connection.cursor()
+            cursor.execute(
+                "INSERT INTO orders (user_id, product_id, price, quantity, address_id) VALUES (%s, %s, %s, %s, %s)",
+                (user_id, product_id, price, quantity, address_id))
+            mysql.connection.commit()
+            cursor.close()
+            return True
+        except Exception as e:
+            print(f"Error during product insertion: {e}")
+            return False
 

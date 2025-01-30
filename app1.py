@@ -1,9 +1,9 @@
 import os
-from flask import Flask, render_template, request, redirect, flash, url_for
+from flask import Flask, render_template, request, redirect, flash, url_for, jsonify
 from flask_mysqldb import MySQL
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 
-from database import UserAuth, Address, Product, Cart
+from database import UserAuth, Address, Product, Cart, Order
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
@@ -104,7 +104,34 @@ def add_address():
 @app.route('/business')
 @login_required
 def business():
-    return render_template('Business.html')
+    try:
+        # Create a cursor
+        cursor = mysql.connection.cursor()
+        # Fetch orders related to the business user's products
+        cursor.execute("""
+            SELECT 
+                o.order_id, 
+                u.name, 
+                p.name, 
+                o.price, 
+                o.quantity, 
+                a.address
+            FROM orders o
+            JOIN products p ON o.product_id = p.product_id
+            JOIN userAuth u ON o.user_id = u.id
+            JOIN userAddress a ON o.address_id = a.address_id
+            WHERE p.user_id = %s
+            ORDER BY o.order_id DESC
+        """, (current_user.id,))
+
+        orders = cursor.fetchall()
+        cursor.close()
+        return render_template('Business.html', name=current_user.id, orders=orders)
+
+    except Exception as e:
+        print(f"Error fetching orders: {e}")
+        return render_template('error.html', message="Unable to fetch business orders.")
+
 
 @app.route('/consumer')
 @login_required
@@ -191,9 +218,97 @@ def logout():
     flash("You have been logged out.", "info")
     return redirect(url_for('index'))
 
+# @app.route('/all_order')
+# @login_required
+# def all_order():
+#     return render_template('view_all_order.html')
+
+
+
+
+
+
+
+@app.route('/buy/<int:product_id>', methods=['GET', 'POST'])
+@login_required
+def buy(product_id):
+    product = Product.get_product_by_id(product_id)  # Fetch product details
+    addresses = Address.get_user_addresses(current_user.id)  # Fetch user addresses
+
+    # If no address is found, prompt the user to add one
+    if not addresses:
+        flash("Please add an address before placing an order.", "warning")
+        return redirect(url_for('add_address'))  # Redirect to the address addition page
+
+    if request.method == 'POST':
+        selected_address = request.form['address']
+        quantity = int(request.form['quantity'])
+
+        # Process order logic here (e.g., deduct stock, create order entry)
+
+        flash("Order placed successfully!", "success")
+        return redirect(url_for('order_confirmation'))  # Redirect after placing the order
+
+    return render_template('buy.html', product=product, addresses=addresses)
+
+@app.route('/add_order', methods=['POST'])
+@login_required
+def add_order():
+    try:
+        # Parse JSON data from the frontend
+        data = request.get_json()
+
+        # Get the current user_id from Flask-Login
+        user_id = current_user.id
+
+        # Extract other data from the frontend request
+        product_id = data.get('product_id')
+        quantity = data.get('quantity')
+        total_price = data.get('total_price')
+        address_id = data.get('address_id')
+
+        # Call the static method to add the order to the database
+        success = Order.add_order(user_id, product_id, total_price, quantity, address_id)
+
+        if success:
+            flash("Order placed successfully!", "success")  # Optional: Flash message
+            return jsonify({"success": True, "redirect_url": url_for('all_order')})
+        else:
+            return jsonify({"success": False, "message": "Failed to place order. Please try again."}), 500
+
+    except Exception as e:
+        # Handle any errors
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+@app.route('/all_order')
+@login_required
+def all_order():
+    try:
+        # Create a cursor
+        cursor = mysql.connection.cursor()
+
+        # Get the current logged-in user's ID
+        user_id = current_user.id
+
+        # Fetch the orders for the current user
+        cursor.execute("SELECT * FROM orders WHERE user_id = %s", (user_id,))
+        orders = cursor.fetchall()
+
+        # Close cursor
+        cursor.close()
+
+        # Render the view_all_order.html page with the fetched orders
+        return render_template('view_all_order.html', orders=orders)
+
+    except Exception as e:
+        print(f"Error: {e}")
+        return render_template('error.html', message="Unable to fetch orders.")
+
 if __name__ == '__main__':
-    UserAuth.create_user_table()
-    Address.create_address_table()
-    Product.create_product_table()
-    Cart.create_cart_table()
+    # UserAuth.create_user_table()
+    # Address.create_address_table()
+    # Product.create_product_table()
+    # Cart.create_cart_table()
+    # Order.create_order_table()
     app.run(debug=True)

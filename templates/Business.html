@@ -1,16 +1,49 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-
     <meta charset="UTF-8">
-    <title>Business</title>
+    <title>Business Dashboard</title>
 </head>
 <body>
-<a href="{{ url_for('consumer') }}">Switch Account</a>
-<a href="{{ url_for('logout') }}">Logout</a>
-<a href="{{ url_for('add_address') }}">Add Address</a>
-<a href="{{ url_for('upload') }}">Add Product</a>
-<a href="{{ url_for('view_products') }}">My Products</a>
-<h1>welcome Business User:{{ name }}</h1>
+
+    <a href="{{ url_for('consumer') }}">Switch Account</a>
+    <a href="{{ url_for('logout') }}">Logout</a>
+    <a href="{{ url_for('add_address') }}">Add Address</a>
+    <a href="{{ url_for('upload') }}">Add Product</a>
+    <a href="{{ url_for('view_products') }}">My Products</a>
+
+    <h1>Welcome, Business User: {{ name }}</h1>
+
+    <h2>All Orders for Your Products</h2>
+
+    {% if orders %}
+        <table border="1">
+            <tr>
+                <th>Order ID</th>
+                <th>Buyer Name</th>
+                <th>Product Name</th>
+                <th>Quantity</th>
+                <th>Total Price</th>
+                <th>Delivery Address</th>
+            </tr>
+            {% for order in orders %}
+            <tr>
+                <td>{{ order[0] }}</td>
+                <td>{{ order[1] }}</td>
+                <td>{{ order[2] }}</td>
+                <td>{{ order[4] }}</td>
+                <td>₹{{ order[3] }}</td>
+                <td>
+                    {{ order[5] or '' }} {{ order[6] }},
+                    {{ order[7] or '' }}, {{ order[8] }},
+                    {{ order[9] or '' }}, {{ order[10] or '' }}, {{ order[11] }}
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    {% else %}
+        <p>No orders yet.</p>
+    {% endif %}
+
 </body>
 </html>
