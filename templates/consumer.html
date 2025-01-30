@@ -42,7 +42,7 @@
 <body>
 <a href="{{ url_for('business') }}">Switch Account</a>
 <a href="{{ url_for('add_address') }}">Add Address</a>
-
+<a href="{{ url_for('cart') }}">My Cart</a>
 <a href="{{ url_for('logout') }}">Logout</a>
 <h1>welcome user:{{ name }}</h1><br><br>
 <div class="container">
@@ -53,6 +53,8 @@
 
             <h3>{{ product[2] }}</h3>
             <p class="price">$ {{ product[3] }}</p>
+
+            <button type="button"> <a  href="/add_cart/{{ product[0]}}" class="button3">Add to cart</a></button>
         </div>
         {% endfor %}
     </div>

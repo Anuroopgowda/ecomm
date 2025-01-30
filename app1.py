@@ -1,8 +1,9 @@
+import os
 from flask import Flask, render_template, request, redirect, flash, url_for
 from flask_mysqldb import MySQL
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
-import os
-from database import UserAuth, Address, Product
+
+from database import UserAuth, Address, Product, Cart
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
@@ -70,7 +71,7 @@ def login():
             flash("Login successful!", "success")
             if account_type == 'consumer':
                 return redirect(url_for('consumer'))
-            elif account_type == 'business':
+            else:
                 return redirect(url_for('business'))
         else:
             flash("Invalid credentials.", "danger")
@@ -148,6 +149,34 @@ def view_products():
     cursor.close()
     return render_template('view_products.html', products=products)
 
+# add_to_cart
+# working on it
+@app.route('/add_cart/<int:product_id>', methods=['GET'])
+@login_required
+def add_cart(product_id):
+    user_id = current_user.id
+    Cart.add_to_cart(user_id,product_id)
+    return redirect(url_for('cart'))
+
+
+@app.route('/cart')
+@login_required
+def cart():
+    cursor = mysql.connection.cursor()
+
+    # Correct SQL query to fetch products in the cart for the current user
+    cursor.execute("""
+        SELECT p.* FROM cart c
+        JOIN products p ON c.product_id = p.product_id
+        WHERE c.user_id = %s
+    """, (current_user.id,))
+
+    products = cursor.fetchall()
+    cursor.close()
+
+    return render_template('cart.html', products=products)
+
+
 @app.route('/logout')
 @login_required
 def logout():
@@ -159,4 +188,5 @@ if __name__ == '__main__':
     UserAuth.create_user_table()
     Address.create_address_table()
     Product.create_product_table()
+    Cart.create_cart_table()
     app.run(debug=True)

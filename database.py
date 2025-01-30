@@ -173,3 +173,43 @@ class Product:
                 print(f"Error during product insertion: {e}")
                 return False
 
+# CART
+class Cart:
+    @staticmethod
+    def create_cart_table():
+        """Create the cart table if it does not already exist."""
+        with app.app_context():
+            cursor = mysql.connection.cursor()
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS cart (
+    cart_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    product_id INT NOT NULL,
+    UNIQUE (user_id, product_id),  -- Prevents duplicate product entries for the same user
+    FOREIGN KEY (user_id) REFERENCES userAuth(id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES products(product_id) ON DELETE CASCADE
+)
+
+            ''')
+            mysql.connection.commit()
+            cursor.close()
+    @staticmethod
+    def add_to_cart(user_id,product_id):
+        try:
+            # Connect to the database and execute the query
+            cursor = mysql.connection.cursor()
+            query = '''
+                INSERT INTO cart (
+                    user_id, product_id
+                ) VALUES (%s, %s)
+            '''
+            cursor.execute(query, (user_id, product_id))
+            mysql.connection.commit()
+            cursor.close()
+            return True  # Successfully inserted the address
+        except Exception as e:
+            # Log the error for debugging purposes
+            print(f"Error during  insertion: {e}")
+            return False  # Insertion failed
+
+
