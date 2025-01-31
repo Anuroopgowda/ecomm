@@ -260,7 +260,7 @@ class Order:
                     price INT NOT NULL,
                     quantity INT NOT NULL,
                     address_id INT NOT NULL,
-                    
+                    status VARCHAR(20) DEFAULT 'Pending',
                     FOREIGN KEY (user_id) REFERENCES userAuth(id) ON DELETE CASCADE,
                     FOREIGN KEY (address_id) REFERENCES userAddress(address_id) ON DELETE CASCADE,
                     FOREIGN KEY (product_id) REFERENCES products(product_id) ON DELETE CASCADE

@@ -3,70 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <title>Buy Product</title>
-    <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        let addressDropdown = document.getElementById("address");
-
-        for (let option of addressDropdown.options) {
-            let fullAddress = option.getAttribute("data-full-address");
-            if (fullAddress) {
-                option.textContent = fullAddress;
-            }
-        }
-    });
-
-    function updatePrice() {
-        let pricePerUnit = parseFloat("{{ product[3] }}");  // Convert price to number
-        let quantity = parseInt(document.getElementById("quantity").value); // Get quantity
-        let totalPrice = pricePerUnit * quantity; // Calculate total price
-        document.getElementById("total-price").textContent = "₹" + totalPrice.toFixed(2);
-    }
-
-    function submitForm(event) {
-        event.preventDefault(); // Prevent default form submission
-
-        let product_id = "{{ product[0] }}";  // Product ID
-        let quantity = document.getElementById("quantity").value; // Selected quantity
-        let total_price = parseFloat("{{ product[3] }}") * parseInt(quantity); // Total price
-        let address_id = document.getElementById("address").value; // Selected address
-
-        // Send data to Flask using Fetch API (POST request)
-        fetch("{{ url_for('add_order') }}", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                product_id: product_id,
-                quantity: quantity,
-                total_price: total_price,
-                address_id: address_id
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert("Order placed successfully!");
-                window.location.href = "{{ url_for('all_order') }}";  // Redirect after success
-            } else {
-                alert("Order failed: " + data.message);
-            }
-        })
-        .catch(error => console.error("Error:", error));
-    }
-    </script>
 </head>
 <body>
     <h2>Buy Product</h2>
 
     <!-- Flash Messages -->
 
-    <form id="order-form">
+    <form id="order-form" method="POST">
         <p><strong>Product Name:</strong> {{ product[2] }}</p>
         <p><strong>Price Per Unit:</strong> ₹{{ product[3] }}</p>
         <p><strong>Available Stock:</strong> {{ product[5] }}</p>
 
         <!-- Quantity Selection -->
         <label for="quantity">Quantity:</label>
-        <input type="number" id="quantity" name="quantity" value="1" min="1" max="{{ product[5] }}" required oninput="updatePrice()">
+        <input type="number" id="quantity" name="quantity" value="1" min="1" max="{{ product[5] }}" required>
 
         <!-- Address Dropdown -->
         <label for="address">Select Address:</label>
@@ -77,10 +27,11 @@
         </select>
 
         <!-- Display Total Price -->
-        <p><strong>Total Price:</strong> <span id="total-price">₹{{ product[3] }}</span></p>
+        <p><strong>Total Price:</strong> ₹{{ product[3] }}</p>
 
         <!-- Place Order Button -->
-        <button type="submit" onclick="submitForm(event)">Place Order</button>
+        <button type="submit">Place Order</button>
     </form>
+
 </body>
 </html>

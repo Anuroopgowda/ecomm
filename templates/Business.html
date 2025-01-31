@@ -12,7 +12,7 @@
     <a href="{{ url_for('upload') }}">Add Product</a>
     <a href="{{ url_for('view_products') }}">My Products</a>
 
-    <h1>Welcome, Business User: {{ name }}</h1>
+    <h1>Welcome, Business User</h1>
 
     <h2>All Orders for Your Products</h2>
 
@@ -25,18 +25,24 @@
                 <th>Quantity</th>
                 <th>Total Price</th>
                 <th>Delivery Address</th>
+                <th>Action</th>
             </tr>
             {% for order in orders %}
             <tr>
-                <td>{{ order[0] }}</td>
-                <td>{{ order[1] }}</td>
-                <td>{{ order[2] }}</td>
-                <td>{{ order[4] }}</td>
-                <td>₹{{ order[3] }}</td>
+                <td>{{ order['order_id'] }}</td>
+                <td>{{ order['uname'] }}</td>
+                <td>{{ order['name'] }}</td>
+                <td>{{ order['quantity'] }}</td>
+                <td>₹{{ order['price'] }}</td>
+                <td>{{ order['address'] }}</td>
                 <td>
-                    {{ order[5] or '' }} {{ order[6] }},
-                    {{ order[7] or '' }}, {{ order[8] }},
-                    {{ order[9] or '' }}, {{ order[10] or '' }}, {{ order[11] }}
+                    {% if order['status'] != 'Delivered' %}
+                        <form action="{{ url_for('mark_delivered', order_id=order['order_id']) }}" method="post">
+                            <button type="submit">Mark as Delivered</button>
+                        </form>
+                    {% else %}
+                        Delivered
+                    {% endif %}
                 </td>
             </tr>
             {% endfor %}

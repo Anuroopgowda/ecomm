@@ -10,7 +10,16 @@
     {% if orders %}
         <ul>
             {% for order in orders %}
-                <li>Order ID: {{ order[0] }} | Product ID: {{ order[1] }} | Quantity: {{ order[3] }} | Total Price: ₹{{ order[4] }} | Address ID: {{ order[5] }}</li>
+                <li>
+                    Order ID: {{ order[0] }} | Product ID: {{ order[1] }} | Quantity: {{ order[3] }} |
+                    Total Price: ₹{{ order[4] }} | Address ID: {{ order[5] }} | Status: {{ order[6] }}
+
+                    {% if order[6] == "Delivered" %}
+                        <form action="{{ url_for('review', product_id=order[1], user_id=current_user.id) }}" method="get">
+                            <button type="submit">Review</button>
+                        </form>
+                    {% endif %}
+                </li>
             {% endfor %}
         </ul>
     {% else %}

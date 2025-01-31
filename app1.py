@@ -2,7 +2,7 @@ import os
 from flask import Flask, render_template, request, redirect, flash, url_for, jsonify
 from flask_mysqldb import MySQL
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
-
+import csv
 from database import UserAuth, Address, Product, Cart, Order
 
 app = Flask(__name__)
@@ -111,11 +111,12 @@ def business():
         cursor.execute("""
             SELECT 
                 o.order_id, 
-                u.name, 
+                u.name as uname, 
                 p.name, 
                 o.price, 
                 o.quantity, 
-                a.address
+                a.address,
+                o.status
             FROM orders o
             JOIN products p ON o.product_id = p.product_id
             JOIN userAuth u ON o.user_id = u.id
@@ -125,6 +126,8 @@ def business():
         """, (current_user.id,))
 
         orders = cursor.fetchall()
+        column_names = [desc[0] for desc in cursor.description]  # Get column names
+        orders = [dict(zip(column_names, row)) for row in orders]
         cursor.close()
         return render_template('Business.html', name=current_user.id, orders=orders)
 
@@ -137,7 +140,7 @@ def business():
 @login_required
 def consumer():
     cursor = mysql.connection.cursor()
-    cursor.execute("SELECT * FROM products WHERE user_id!=%s", (current_user.id,))
+    cursor.execute("SELECT * FROM products WHERE user_id!=%s AND quantity > 0", (current_user.id,))
     products = cursor.fetchall()
     cursor.close()
     return render_template('consumer.html', products=products)
@@ -229,13 +232,48 @@ def logout():
 
 
 
+# @app.route('/buy/<int:product_id>', methods=['GET', 'POST'])
+# @login_required
+# def buy(product_id):
+#     product = Product.get_product_by_id(product_id)  # Fetch product details
+#     addresses = Address.get_user_addresses(current_user.id)  # Fetch user addresses
+#
+#     # If no address is found, prompt the user to add one
+#     if not addresses:
+#         flash("Please add an address before placing an order.", "warning")
+#         return redirect(url_for('add_address'))  # Redirect to the address addition page
+#
+#     if request.method == 'POST':
+#         selected_address = request.form['address']
+#         quantity = int(request.form['quantity'])
+#         # updating the quantity of the product
+#         conn = mysql.connection.cursor()
+#         conn.execute('UPDATE products SET quantity = quantity - %s WHERE product_id = %s', (quantity, product_id))
+#         mysql.connection.commit()
+#         conn.close()
+#
+#         # Process order logic here (e.g., deduct stock, create order entry)
+#
+#         flash("Order placed successfully!", "success")
+#         return redirect(url_for('order_confirmation'))  # Redirect after placing the order
+#
+#     return render_template('buy.html', product=product, addresses=addresses)
+
+# working
+@app.route('/update_quantity/<int:product_id>/<int:quantity>', methods=['GET', 'POST'])
+def update_quantity(product_id,quantity):
+    print(f"{product_id} ,{quantity}")
+    cur=mysql.connection.cursor()
+    cur.execute('update products set quantity=quantity-%s where product_id=%s',(quantity, product_id,))
+    mysql.connection.commit()
+    cur.close()
+    return redirect(url_for('all_order'))
+
 @app.route('/buy/<int:product_id>', methods=['GET', 'POST'])
-@login_required
 def buy(product_id):
     product = Product.get_product_by_id(product_id)  # Fetch product details
     addresses = Address.get_user_addresses(current_user.id)  # Fetch user addresses
 
-    # If no address is found, prompt the user to add one
     if not addresses:
         flash("Please add an address before placing an order.", "warning")
         return redirect(url_for('add_address'))  # Redirect to the address addition page
@@ -243,13 +281,23 @@ def buy(product_id):
     if request.method == 'POST':
         selected_address = request.form['address']
         quantity = int(request.form['quantity'])
+        print(f"Received quantity: {quantity}")
+        conn = mysql.connection.cursor()
+        conn.execute('''INSERT INTO orders (product_id, user_id, quantity, price, address_id)
+                            VALUES (%s, %s, %s, %s, %s)''',
+                         (product_id, current_user.id, quantity, product[3] * quantity, selected_address))
+        mysql.connection.commit()
+        conn.close()
 
-        # Process order logic here (e.g., deduct stock, create order entry)
 
         flash("Order placed successfully!", "success")
-        return redirect(url_for('order_confirmation'))  # Redirect after placing the order
+        return redirect(url_for('update_quantity',product_id=product_id,quantity=quantity))
+
 
     return render_template('buy.html', product=product, addresses=addresses)
+
+
+
 
 @app.route('/add_order', methods=['POST'])
 @login_required
@@ -304,6 +352,43 @@ def all_order():
     except Exception as e:
         print(f"Error: {e}")
         return render_template('error.html', message="Unable to fetch orders.")
+
+# working on it
+@app.route('/mark_delivered/<int:order_id>', methods=['POST'])
+def mark_delivered(order_id):
+    try:
+        conn = mysql.connection.cursor()
+        conn.execute('UPDATE orders SET status = %s WHERE order_id = %s', ("Delivered", order_id))
+        mysql.connection.commit()  # Commit the changes
+        conn.close()  # Close the cursor
+        return redirect(url_for('business'))
+    except Exception as e:
+        print(f"Error updating order status: {e}")
+        return render_template('error.html', message="Unable to update order status.")
+
+# Path to store reviews
+REVIEWS_FILE = "reviews.csv"
+
+# Ensure CSV file has headers
+if not os.path.exists(REVIEWS_FILE):
+    with open(REVIEWS_FILE, 'w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(["Product ID", "User ID", "Rating", "Review"])
+
+@app.route('/review/<int:product_id>/<int:user_id>', methods=['GET', 'POST'])
+def review(product_id, user_id):
+    if request.method == 'POST':
+        review_text = request.form['review']
+        rating = request.form['rating']
+
+        # Store review in a CSV file
+        with open(REVIEWS_FILE, 'a', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow([product_id, user_id, rating, review_text])
+
+        return redirect(url_for('all_order'))
+
+    return render_template('review.html', product_id=product_id, user_id=user_id)
 
 if __name__ == '__main__':
     # UserAuth.create_user_table()
