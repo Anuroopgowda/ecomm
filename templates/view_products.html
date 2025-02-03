@@ -4,58 +4,109 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Product Listings</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            text-align: center;
-        }
-        .container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            max-width: 1000px;
-            margin: auto;
-        }
-        .product {
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 15px;
-            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
-            text-align: center;
-        }
-        .product img {
-            width: 100%;
-            max-height: 200px;
-            object-fit: cover;
-            border-radius: 8px;
-        }
-        .product h3 {
-            margin: 10px 0;
-        }
-        .price {
-            font-size: 18px;
-            font-weight: bold;
-            color: green;
-        }
-    </style>
+
+    <!-- Tailwind CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="/static/style/style.css">
 </head>
-<body>
+<body class="bg-gray-100 text-gray-900">
 
-    <h2>My Products</h2>
-    <div class="container">
-        {% for product in products %}
-        <div class="product">
+    <!-- Sidebar -->
+    <div id="sidebar" class="fixed top-0 left-[-250px] w-64 bg-gray-800 text-white h-full transition-all duration-300 ease-in-out z-50">
+        <div class="p-5">
+            <img src="/static/images/logo.png" alt="Logo" class="w-16 mb-4">
+            <h2 class="text-2xl font-semibold mb-4">Dashboard</h2>
+            <p class="text-sm mb-6">Manage Your Products</p>
 
-            <img src="{{ product[7] }}" alt="{{ product[7] }}">
-
-            <h3>{{ product[2] }}</h3>
-            <p class="price">$ {{ product[3] }}</p>
-            <button type="button"> <a  href="/delete/{{ product[0]}}" class="button3">Delete</a></button>
+            <a href="{{ url_for('business') }}" class="block py-2 px-4 hover:bg-gray-700 rounded">Business Home</a>
+            <a href="{{ url_for('upload') }}" class="block py-2 px-4 hover:bg-gray-700 rounded">Add Product</a>
+            <a href="{{ url_for('logout') }}" class="block py-2 px-4 hover:bg-gray-700 rounded">Logout</a>
         </div>
-
-        {% endfor %}
     </div>
+
+    <!-- Sidebar Overlay -->
+    <div id="overlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden"></div>
+
+    <!-- Main Content -->
+    <div class="ml-0 md:ml-64 transition-all duration-300 ease-in-out p-8" id="main-content">
+        <button id="toggle-btn" class="absolute top-5 left-5 z-10 text-white bg-gray-800 p-3 rounded-md md:hidden">
+            <i class="fas fa-bars"></i>
+        </button>
+
+        <div class="container mx-auto">
+            <h1 class="text-3xl font-bold text-center mb-6">My Products</h1>
+        {% for product in products %}
+            <div class="bg-white p-6 rounded-lg shadow-lg transition duration-300 hover:scale-105 flex flex-col items-center justify-between border border-gray-200 hover:shadow-2xl transform hover:translate-y-1">
+    <!-- Product Image -->
+    <img src="{{ product[7] }}" alt="{{ product[2] }}" class="w-full h-64 object-cover rounded-lg mb-4 transition-transform duration-300 ease-in-out transform hover:scale-105">
+
+    <!-- Product Title -->
+    <h3 class="text-2xl font-semibold text-gray-800 mb-2">{{ product[2] }}</h3>
+
+    <!-- Product Details -->
+    <div class="w-full text-center mb-4">
+        <p class="text-md text-gray-600">Quantity: <span class="font-medium text-gray-800">{{ product[5] }}</span></p>
+        <p class="text-md text-gray-600">Category: <span class="font-medium text-gray-800">{{ product[4] }}</span></p>
+        <p class="text-md text-gray-600">Description: <span class="font-medium text-gray-800">{{ product[6] }}</span></p>
+    </div>
+
+    <!-- Product Price -->
+    <p class="text-2xl font-bold text-green-600 mb-4">₹{{ product[3] }}</p>
+    <!-- update button -->
+    <a href="/update_product/{{ product[0] }}" class="mt-4 bg-red-600 text-white px-5 py-3 rounded-md hover:bg-red-700 transition duration-200 transform hover:scale-105 inline-flex items-center justify-center space-x-2">
+    <i class="fas fa-edit"></i> <!-- Changed the icon -->
+    <span>Update</span>
+</a>
+
+    <!-- Delete Button -->
+    <a href="/remove/{{ product[0] }}" class="mt-4 bg-red-600 text-white px-5 py-3 rounded-md hover:bg-red-700 transition duration-200 transform hover:scale-105 inline-flex items-center justify-center space-x-2">
+        <i class="fas fa-trash-alt"></i>
+        <span>Delete</span>
+    </a>
+</div>
+
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Tailwind JS and FontAwesome -->
+    <script src="https://kit.fontawesome.com/a076d05399.js"></script>
+
+    <script>
+        // Sidebar Toggle
+        document.getElementById('toggle-btn').addEventListener('click', function () {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('overlay');
+            const mainContent = document.getElementById('main-content');
+
+            if (sidebar.style.left === '-250px') {
+                sidebar.style.left = '0';
+                overlay.style.display = 'block';
+                mainContent.classList.add('ml-64');
+            } else {
+                sidebar.style.left = '-250px';
+                overlay.style.display = 'none';
+                mainContent.classList.remove('ml-64');
+            }
+        });
+
+        // Close sidebar when overlay is clicked
+        document.getElementById('overlay').addEventListener('click', function () {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('overlay');
+            const mainContent = document.getElementById('main-content');
+
+            sidebar.style.left = '-250px';
+            overlay.style.display = 'none';
+            mainContent.classList.remove('ml-64');
+        });
+    </script>
 
 </body>
 </html>

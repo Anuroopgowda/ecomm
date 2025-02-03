@@ -2,36 +2,127 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Buy Product</title>
+
+    <!-- Tailwind CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="/static/style/style.css">
 </head>
-<body>
-    <h2>Buy Product</h2>
+<body class="bg-gray-100 text-gray-900">
 
-    <!-- Flash Messages -->
+    <!-- Sidebar -->
+    <div id="sidebar" class="fixed top-0 left-[-250px] w-64 bg-gray-800 text-white h-full transition-all duration-300 ease-in-out z-50">
+        <div class="p-5">
+            <img src="/static/images/logo.png" alt="Logo" class="w-16 mb-4">
+            <h2 class="text-2xl font-semibold mb-4">Shopping Dashboard</h2>
+            <p class="text-sm mb-6">Manage Your Orders & Cart</p>
 
-    <form id="order-form" method="POST">
-        <p><strong>Product Name:</strong> {{ product[2] }}</p>
-        <p><strong>Price Per Unit:</strong> ₹{{ product[3] }}</p>
-        <p><strong>Available Stock:</strong> {{ product[5] }}</p>
+            <a href="{{ url_for('consumer') }}" class="block py-2 px-4 hover:bg-gray-700 rounded">Home</a>
+            <a href="{{ url_for('cart') }}" class="block py-2 px-4 hover:bg-gray-700 rounded">My Cart</a>
+            <a href="{{ url_for('all_order') }}" class="block py-2 px-4 hover:bg-gray-700 rounded">Your Orders</a>
+            <a href="{{ url_for('add_address') }}" class="block py-2 px-4 hover:bg-gray-700 rounded">Add Address</a>
+            <a href="{{ url_for('logout') }}" class="block py-2 px-4 hover:bg-gray-700 rounded">Logout</a>
+        </div>
+    </div>
 
-        <!-- Quantity Selection -->
-        <label for="quantity">Quantity:</label>
-        <input type="number" id="quantity" name="quantity" value="1" min="1" max="{{ product[5] }}" required>
+    <!-- Sidebar Overlay -->
+    <div id="overlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden"></div>
 
-        <!-- Address Dropdown -->
-        <label for="address">Select Address:</label>
-        <select id="address" name="address" required>
-            {% for address in addresses %}
-                <option value="{{ address[0] }}">{{ address[2] }}</option>
-            {% endfor %}
-        </select>
+    <!-- Main content -->
+    <div class="ml-0 md:ml-64 transition-all duration-300 ease-in-out" id="main-content">
+        <button id="toggle-btn" class="absolute top-5 left-5 z-10 text-white bg-gray-800 p-3 rounded-md md:hidden">
+            <i class="fas fa-bars"></i>
+        </button>
 
-        <!-- Display Total Price -->
-        <p><strong>Total Price:</strong> ₹{{ product[3] }}</p>
+        <div class="container mx-auto p-8">
+            <h2 class="text-3xl font-bold mb-6">Buy Product</h2>
 
-        <!-- Place Order Button -->
-        <button type="submit">Place Order</button>
-    </form>
+            <div class="bg-white p-6 rounded-lg shadow-lg w-full md:w-2/3 lg:w-1/2 mx-auto">
+                <form id="order-form" method="POST">
+
+                    <!-- Product Details -->
+                    <div class="mb-4">
+                        <p class="text-lg font-semibold"><strong>Product Name:</strong> {{ product[2] }}</p>
+                        <p class="text-lg"><strong>Price Per Unit:</strong> ₹{{ product[3] }}</p>
+                        <p class="text-lg"><strong>Available Stock:</strong> {{ product[5] }}</p>
+                    </div>
+
+                    <!-- Quantity Selection -->
+                    <div class="mb-4">
+                        <label for="quantity" class="block font-semibold mb-2">Quantity:</label>
+                        <input type="number" id="quantity" name="quantity" value="1" min="1" max="{{ product[5] }}" class="w-full p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    </div>
+
+                    <!-- Address Selection -->
+                    <div class="mb-4">
+                        <label for="address" class="block font-semibold mb-2">Select Address:</label>
+                        <select id="address" name="address" class="w-full p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                            {% for address in addresses %}
+                                <option value="{{ address[0] }}">{{ address[2] }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Display Total Price -->
+                    <div class="mb-4">
+                        <p class="text-xl font-bold"><strong>Total Price:</strong> ₹<span id="total-price">{{ product[3] }}</span></p>
+                    </div>
+
+                    <!-- Place Order Button -->
+                    <button type="submit" class="w-full py-3 bg-green-600 text-white rounded-md hover:bg-green-700 transition transform hover:scale-105">
+                        Place Order
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tailwind JS and FontAwesome -->
+    <script src="https://kit.fontawesome.com/a076d05399.js"></script>
+
+    <script>
+        // Sidebar Toggle
+        document.getElementById('toggle-btn').addEventListener('click', function () {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('overlay');
+            const mainContent = document.getElementById('main-content');
+
+            if (sidebar.style.left === '-250px') {
+                sidebar.style.left = '0';
+                overlay.style.display = 'block';
+                mainContent.classList.add('ml-64');
+            } else {
+                sidebar.style.left = '-250px';
+                overlay.style.display = 'none';
+                mainContent.classList.remove('ml-64');
+            }
+        });
+
+        // Close sidebar when overlay is clicked
+        document.getElementById('overlay').addEventListener('click', function () {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('overlay');
+            const mainContent = document.getElementById('main-content');
+
+            sidebar.style.left = '-250px';
+            overlay.style.display = 'none';
+            mainContent.classList.remove('ml-64');
+        });
+
+        // Auto-update total price
+        document.getElementById('quantity').addEventListener('input', function () {
+            const unitPrice = {{ product[3] }};  // Fetch the product price dynamically
+            const quantity = this.value;
+            const totalPrice = unitPrice * quantity;
+            document.getElementById('total-price').textContent = totalPrice.toFixed(2);
+        });
+    </script>
 
 </body>
 </html>

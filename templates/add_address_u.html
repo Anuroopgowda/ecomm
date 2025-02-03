@@ -20,14 +20,14 @@
     <div id="sidebar" class="fixed top-0 left-[-250px] w-64 bg-gray-800 text-white h-full transition-all duration-300 ease-in-out z-50">
         <div class="p-5">
             <img src="/static/images/logo.png" alt="Logo" class="w-16 mb-4">
-            <h2 class="text-2xl font-semibold mb-4">Business Dashboard</h2>
-            <p class="text-sm mb-6">Manage Your Orders & Products</p>
+            <h2 class="text-2xl font-semibold mb-4">Shopping Dashboard</h2>
+            <p class="text-sm mb-6">Manage Your Orders </p>
 
-            <a href="{{ url_for('consumer') }}" class="block py-2 px-4 hover:bg-gray-700 rounded">Switch Account</a>
-            <a href="{{ url_for('logout') }}" class="block py-2 px-4 hover:bg-gray-700 rounded">Logout</a>
+            <a href="{{ url_for('consumer') }}" class="block py-2 px-4 hover:bg-gray-700 rounded">Home</a>
+            <a href="{{ url_for('cart') }}" class="block py-2 px-4 hover:bg-gray-700 rounded">My Cart</a>
+            <a href="{{ url_for('all_order') }}" class="block py-2 px-4 hover:bg-gray-700 rounded">Your Orders</a>
             <a href="{{ url_for('add_address') }}" class="block py-2 px-4 hover:bg-gray-700 rounded">Add Address</a>
-            <a href="{{ url_for('upload') }}" class="block py-2 px-4 hover:bg-gray-700 rounded">Add Product</a>
-            <a href="{{ url_for('view_products') }}" class="block py-2 px-4 hover:bg-gray-700 rounded">My Products</a>
+            <a href="{{ url_for('logout') }}" class="block py-2 px-4 hover:bg-gray-700 rounded">Logout</a>
         </div>
     </div>
 
@@ -55,7 +55,7 @@
                 {% endif %}
             {% endwith %}
 
-            <form action="/add_address" method="POST" class="bg-white p-8 rounded-lg shadow-lg">
+            <form action="/add_address_u" method="POST" class="bg-white p-8 rounded-lg shadow-lg">
                 <!-- Street Number and Postal Code -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
                     <div>

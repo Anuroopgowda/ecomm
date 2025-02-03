@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consumer Dashboard</title>
+
+    <!-- Tailwind CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+
+    <!-- Custom Styles (for transition and active states) -->
+    <link rel="stylesheet" href="/static/style/style.css">
+</head>
+<body class="bg-gray-100 text-gray-900">
+
+    <!-- Sidebar (Hidden by default) -->
+    <div id="sidebar" class="fixed top-0 left-[-250px] w-64 bg-gray-800 text-white h-full transition-all duration-300 ease-in-out z-50">
+        <div class="p-5">
+            <img src="/static/images/logo.png" alt="Logo" class="w-16 mb-4">
+            <h2 class="text-2xl font-semibold mb-4">Welcome, {{ name }}</h2>
+            <p class="text-sm mb-6">Explore and Shop the Best Products</p>
+
+            <a href="{{ url_for('business') }}" class="block py-2 px-4 hover:bg-gray-700 rounded">Switch Account</a>
+            <a href="{{ url_for('add_address_u') }}" class="block py-2 px-4 hover:bg-gray-700 rounded">Add Address</a>
+            <a href="{{ url_for('cart') }}" class="block py-2 px-4 hover:bg-gray-700 rounded">My Cart</a>
+            <a href="{{ url_for('all_order') }}" class="block py-2 px-4 hover:bg-gray-700 rounded">Your Orders</a>
+            <a href="{{ url_for('logout') }}" class="block py-2 px-4 hover:bg-gray-700 rounded">Logout</a>
+        </div>
+    </div>
+
+    <!-- Overlay (when sidebar is open) -->
+    <div id="overlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden"></div>
+
+    <!-- Main content area -->
+    <div class="ml-0 md:ml-64 transition-all duration-300 ease-in-out" id="main-content">
+        <button id="toggle-btn" class="absolute top-5 left-5 z-10 text-white bg-gray-800 p-3 rounded-md md:hidden">
+            <i class="fas fa-bars"></i> <!-- Hamburger icon -->
+        </button>
+
+        <div class="container mx-auto p-8">
+            <h1 class="text-3xl font-bold mb-6">Explore Our Products</h1>
+
+            <!-- Search Bar and Filter Buttons -->
+            <div class="flex flex-col md:flex-row gap-4 mb-8">
+                <!-- Search Bar -->
+                <input type="text" id="search-bar" placeholder="Search products..." class="p-3 border rounded-md w-full md:w-64 focus:outline-none focus:ring-2 focus:ring-blue-600">
+
+                <!-- Filter Buttons -->
+                <div class="flex gap-2">
+                    <button id="filter-low-to-high" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition transform hover:scale-105">
+                        Price: Low to High
+                    </button>
+                    <button id="filter-high-to-low" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition transform hover:scale-105">
+                        Price: High to Low
+                    </button>
+                </div>
+            </div>
+
+            <!-- Product Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6" id="product-grid">
+                {% for product in products %}
+                <div class="bg-white p-6 rounded-lg shadow-lg transition duration-300 hover:scale-105 hover:shadow-2xl transform product-item" data-name="{{ product[2] }}" data-price="{{ product[3] }}">
+                    <!-- Product Image -->
+                    <img src="{{ product[7] }}" alt="{{ product[2] }}" class="w-full h-48 object-cover mb-4 rounded-lg transition-transform duration-300 ease-in-out hover:scale-105">
+
+                    <!-- Product Name -->
+                    <h3 class="text-2xl font-semibold text-gray-800 mb-2">{{ product[2] }}</h3>
+
+                    <!-- Product Details -->
+                    <div class="space-y-2 mb-4 text-gray-600">
+                        <p class="text-lg">Quantity: <span class="font-medium text-gray-800">{{ product[5] }}</span></p>
+                        <p class="text-lg">Category: <span class="font-medium text-gray-800">{{ product[4] }}</span></p>
+                        <p class="text-lg">Description: <span class="font-medium text-gray-800">{{ product[6] }}</span></p>
+                    </div>
+
+                    <!-- Product Price -->
+                    <p class="text-2xl font-bold text-green-600 mb-4">₹{{ product[3] }}</p>
+
+                    <!-- Buttons (Add to Cart & Buy Now) -->
+                    <div class="flex justify-between gap-4 mt-4">
+                        <!-- Add to Cart Button -->
+                        <a href="/add_cart/{{ product[0] }}" class="text-white bg-blue-600 px-5 py-3 rounded-md hover:bg-blue-700 transition transform hover:scale-105 inline-flex items-center justify-center space-x-2">
+                            <i class="fas fa-cart-plus"></i>
+                            <span>Add to Cart</span>
+                        </a>
+
+                        <!-- Buy Now Button -->
+                        <a href="/buy/{{ product[0] }}" class="text-white bg-yellow-600 px-5 py-3 rounded-md hover:bg-yellow-700 transition transform hover:scale-105 inline-flex items-center justify-center space-x-2">
+                            <i class="fas fa-bolt"></i>
+                            <span>Buy Now</span>
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Tailwind CSS JS and FontAwesome -->
+    <script src="https://kit.fontawesome.com/a076d05399.js"></script>
+
+    <script>
+        // Toggle sidebar visibility
+        document.getElementById('toggle-btn').addEventListener('click', function () {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('overlay');
+            const mainContent = document.getElementById('main-content');
+
+            if (sidebar.classList.contains('left-[-250px]')) {
+                sidebar.classList.remove('left-[-250px]');
+                sidebar.classList.add('left-0');
+                overlay.classList.remove('hidden');
+                mainContent.classList.add('ml-64'); // Adjust content when sidebar is open
+            } else {
+                sidebar.classList.add('left-[-250px]');
+                overlay.classList.add('hidden');
+                mainContent.classList.remove('ml-64');
+            }
+        });
+
+        // Close sidebar when overlay is clicked
+        document.getElementById('overlay').addEventListener('click', function () {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('overlay');
+            const mainContent = document.getElementById('main-content');
+
+            sidebar.classList.add('left-[-250px]');
+            overlay.classList.add('hidden');
+            mainContent.classList.remove('ml-64');
+        });
+
+        // Search Functionality
+        document.getElementById('search-bar').addEventListener('input', function () {
+            const searchQuery = this.value.toLowerCase();
+            const productItems = document.querySelectorAll('.product-item');
+
+            productItems.forEach(item => {
+                const productName = item.dataset.name.toLowerCase();
+                if (productName.includes(searchQuery)) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+
+        // Filter by Price (Low to High)
+        document.getElementById('filter-low-to-high').addEventListener('click', function () {
+            sortProducts('low-to-high');
+        });
+
+        // Filter by Price (High to Low)
+        document.getElementById('filter-high-to-low').addEventListener('click', function () {
+            sortProducts('high-to-low');
+        });
+
+        // Sort Products Function
+        function sortProducts(order) {
+            const productGrid = document.getElementById('product-grid');
+            const productItems = Array.from(document.querySelectorAll('.product-item'));
+
+            productItems.sort((a, b) => {
+                const priceA = parseFloat(a.dataset.price);
+                const priceB = parseFloat(b.dataset.price);
+
+                if (order === 'low-to-high') {
+                    return priceA - priceB;
+                } else {
+                    return priceB - priceA;
+                }
+            });
+
+            // Clear the grid and append sorted items
+            productGrid.innerHTML = '';
+            productItems.forEach(item => productGrid.appendChild(item));
+        }
+    </script>
+
+</body>
+</html>

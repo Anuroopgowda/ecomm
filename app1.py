@@ -1,5 +1,6 @@
+import json
 import os
-from flask import Flask, render_template, request, redirect, flash, url_for, jsonify
+from flask import Flask, render_template, request, redirect, flash, url_for, jsonify, session
 from flask_mysqldb import MySQL
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 import csv
@@ -39,9 +40,26 @@ def load_user(user_id):
         return User(user_data['id'], user_data['name'], user_data['email'])
     return None
 
+
+
 @app.route('/')
 def index():
     return render_template('index.html')
+
+# @app.route('/register', methods=['POST', 'GET'])
+# def register():
+#     if request.method == 'POST':
+#         name = request.form['name']
+#         email = request.form['email']
+#         mobile_number = request.form['mobile_number']
+#         password = request.form['password']
+#         success = UserAuth.register_user(name, email, mobile_number, password)
+#         if success:
+#             flash("Registration successful! Please log in.", "success")
+#         else:
+#             flash("Registration failed. Try again.", "danger")
+#         return redirect(url_for('index'))
+#     return render_template('register.html')
 
 @app.route('/register', methods=['POST', 'GET'])
 def register():
@@ -50,13 +68,24 @@ def register():
         email = request.form['email']
         mobile_number = request.form['mobile_number']
         password = request.form['password']
+
+        # Check if user already exists
+        if UserAuth.user_exists(email, mobile_number):
+            flash("User with this email already exists. Please log in.", "warning")
+            return redirect(url_for('register'))  # Keep user on the registration page
+
+        # Register new user
         success = UserAuth.register_user(name, email, mobile_number, password)
+
         if success:
             flash("Registration successful! Please log in.", "success")
+            return redirect(url_for('login'))
         else:
             flash("Registration failed. Try again.", "danger")
-        return redirect(url_for('index'))
+            return redirect(url_for('register'))
+
     return render_template('register.html')
+
 
 @app.route('/login', methods=['POST', 'GET'])
 def login():
@@ -64,18 +93,24 @@ def login():
         email = request.form['email']
         password = request.form['password']
         account_type = request.form['account_type']
+
         success, account = UserAuth.login_user(email, password)
+
         if success:
             user = User(account['id'], account['name'], account['email'])
             login_user(user)
             flash("Login successful!", "success")
+
             if account_type == 'consumer':
                 return redirect(url_for('consumer'))
             else:
                 return redirect(url_for('business'))
         else:
-            flash("Invalid credentials.", "danger")
-    return redirect(url_for('index'))
+            flash("Invalid credentials. Please try again.", "danger")
+            return redirect(url_for('index'))  # Redirect ensures flash messages persist
+
+    return render_template('index.html')  # Ensure login page is rendered properly
+
 
 @app.route('/add_address', methods=['POST', 'GET'])
 @login_required
@@ -101,6 +136,31 @@ def add_address():
         return redirect(url_for('add_address'))
     return render_template('add_address.html')
 
+# user_address
+@app.route('/add_address_u', methods=['POST', 'GET'])
+@login_required
+def add_address_u():
+    if request.method == "POST":
+        try:
+            success = Address.add_address(
+                u_id=current_user.id,
+                street_no=request.form['street_no'],
+                address_line1=request.form['address_line1'],
+                address_line2=request.form.get('address_line2'),
+                city=request.form['city'],
+                region=request.form.get('region'),
+                postal_code=request.form['postal_code'],
+                country=request.form['country']
+            )
+            if success:
+                flash("Address added successfully!", "success")
+            else:
+                flash("Failed to add address. Please try again.", "danger")
+        except Exception as e:
+            flash(f"An error occurred: {str(e)}", "danger")
+        return redirect(url_for('add_address_u'))
+    return render_template('add_address_u.html')
+
 @app.route('/business')
 @login_required
 def business():
@@ -113,6 +173,7 @@ def business():
                 o.order_id, 
                 u.name as uname, 
                 p.name, 
+                u.mobile_number,
                 o.price, 
                 o.quantity, 
                 a.address,
@@ -167,7 +228,7 @@ def upload():
         mysql.connection.commit()
         cursor.close()
         flash("Product uploaded successfully!", "success")
-        return redirect(url_for('view_products'))
+        return redirect(url_for('upload'))
     return render_template('upload.html')
 
 @app.route('/view_products')
@@ -191,12 +252,12 @@ def add_cart(product_id):
 
 @app.route('/cart')
 @login_required
-def cart():
+def cart(): 
     cursor = mysql.connection.cursor()
-
+    addresses = Address.get_user_addresses(current_user.id)  # Fetch user addresses
     # Correct SQL query to fetch products in the cart for the current user
     cursor.execute("""
-        SELECT p.* FROM cart c
+        SELECT p.*,c.* FROM cart c
         JOIN products p ON c.product_id = p.product_id
         WHERE c.user_id = %s
     """, (current_user.id,))
@@ -204,7 +265,20 @@ def cart():
     products = cursor.fetchall()
     cursor.close()
 
-    return render_template('cart.html', products=products)
+    return render_template('cart.html', products=products,address=addresses)
+
+@app.route('/remove_from_cart/<int:cart_id>', methods=['POST','GET'])
+def remove_from_cart(cart_id):
+    user_id = current_user.id
+    conn = mysql.connection.cursor()
+
+    conn.execute("DELETE FROM cart WHERE cart_id = %s", (cart_id,))
+    conn.connection.commit()
+    conn.close()
+    flash('Item removed from cart', 'success')
+
+    return redirect(url_for('cart'))
+
 
 @app.route('/delete/<int:product_id>', methods = ['GET'])
 def delete(product_id):
@@ -276,7 +350,7 @@ def buy(product_id):
 
     if not addresses:
         flash("Please add an address before placing an order.", "warning")
-        return redirect(url_for('add_address'))  # Redirect to the address addition page
+        return redirect(url_for('add_address_u'))  # Redirect to the address addition page
 
     if request.method == 'POST':
         selected_address = request.form['address']
@@ -296,6 +370,106 @@ def buy(product_id):
 
     return render_template('buy.html', product=product, addresses=addresses)
 
+# cart checkout
+# @app.route('/checkout', methods=['POST'])
+# def checkout():
+#     cart = session.get('cart', [])  # Retrieve cart items from session
+#     addresses = Address.get_user_addresses(current_user.id)  # Fetch user addresses
+#
+#     if not cart:
+#         flash("Your cart is empty.", "warning")
+#         return redirect(url_for('cart'))  # Redirect to cart page if empty
+#
+#     if not addresses:
+#         flash("Please add an address before placing an order.", "warning")
+#         return redirect(url_for('add_address'))  # Redirect if no address available
+#
+#     selected_address = request.form.get('address')  # Get selected address
+#     orders = []  # Store processed orders
+#
+#     conn = mysql.connection.cursor()
+#
+#     for item in cart:
+#         product_id = item['product_id']
+#         quantity = int(request.form.get(f'quantity-{product_id}', 1))  # Get quantity per product
+#         coupon_code = request.form.get(f'coupon-{product_id}', '')  # Get coupon per product
+#
+#         product = Product.get_product_by_id(product_id)  # Fetch product details
+#
+#         if not product:
+#             flash(f"Product with ID {product_id} not found.", "danger")
+#             continue
+#
+#         price = product[3] * quantity  # Base price calculation
+#
+#         if coupon_code == "ANU123":  # Apply discount
+#             price *= 0.95  # 5% discount
+#
+#         # Insert order into database
+#         conn.execute('''INSERT INTO orders (product_id, user_id, quantity, price, address_id)
+#                         VALUES (%s, %s, %s, %s, %s)''',
+#                      (product_id, current_user.id, quantity, price, selected_address))
+#
+#         orders.append({'product_id': product_id, 'quantity': quantity})  # Store order info
+#
+#     mysql.connection.commit()
+#     conn.close()
+#
+#     # Clear cart after successful checkout
+#     session['cart'] = []
+#
+#     flash("Order placed successfully!", "success")
+#
+#     # Redirect to update quantity for all ordered products
+#     return redirect(url_for('update_quantity', orders=orders))
+
+
+@app.route('/checkout', methods=['POST'])
+def checkout():
+    try:
+        # Extract cart data from form
+        cart_data = request.form.get("cart_data")
+        cart_items = json.loads(cart_data)  # Convert JSON string to Python object
+
+        for item in cart_items:
+            cart_id = item["product_id"]
+            quantity = item["quantity"]
+            subtotal = item["subtotal"]
+            address_id = item["address_id"]
+            conn=mysql.connection.cursor()
+            conn.execute('''select * from cart where cart_id=%s''',(cart_id,))
+            cart_details=conn.fetchall()
+            mysql.connection.commit()
+            conn.close()
+            product_id=cart_details[0][2]
+
+            print(product_id)
+            conn = mysql.connection.cursor()
+            conn.execute('''INSERT INTO orders (product_id, user_id, quantity, price, address_id)
+                                        VALUES (%s, %s, %s, %s, %s)''',
+                         (product_id, current_user.id, quantity, subtotal, address_id))
+            mysql.connection.commit()
+            conn.close()
+            conn = mysql.connection.cursor()
+            conn.execute('''delete from cart where product_id=%s''',
+                         (product_id,))
+            mysql.connection.commit()
+            conn.close()
+            cur = mysql.connection.cursor()
+            cur.execute('update products set quantity=quantity-%s where product_id=%s', (quantity, product_id,))
+            mysql.connection.commit()
+            cur.close()
+            flash("Order placed successfully!", "success")
+
+
+
+
+
+        return redirect(url_for("all_order"))  # Redirect to order confirmation page
+
+    except Exception as e:
+         # Rollback if error occurs
+        return jsonify({"error": str(e)}), 500
 
 
 
@@ -340,14 +514,23 @@ def all_order():
         user_id = current_user.id
 
         # Fetch the orders for the current user
-        cursor.execute("SELECT * FROM orders WHERE user_id = %s", (user_id,))
+        cursor.execute("SELECT * FROM orders WHERE user_id = %s order by order_id desc", (user_id,))
         orders = cursor.fetchall()
 
         # Close cursor
         cursor.close()
 
+        cur1=mysql.connection.cursor()
+        cur1.execute('select name from products where product_id=%s',(orders[0][2],))
+        product_name=cur1.fetchall()
+        cur1.close()
+
+        cur2=mysql.connection.cursor()
+        cur2.execute('select address from userAddress where address_id=%s',(orders[0][5],))
+        address_d=cur2.fetchall()
+        cur2.close()
         # Render the view_all_order.html page with the fetched orders
-        return render_template('view_all_order.html', orders=orders)
+        return render_template('view_all_order.html', orders=orders,product_name=product_name,address_d=address_d)
 
     except Exception as e:
         print(f"Error: {e}")
@@ -389,6 +572,95 @@ def review(product_id, user_id):
         return redirect(url_for('all_order'))
 
     return render_template('review.html', product_id=product_id, user_id=user_id)
+
+
+@app.route('/search_filter', methods=['GET'])
+def search_filter():
+    try:
+        search_query = request.args.get('query', '').strip().lower()  # Get search input
+        filter_option = request.args.get('filter', 'default')  # Get filter option
+
+        conn = mysql.connection.cursor()
+
+        # Base query to get products
+
+        query = "SELECT * FROM products WHERE user_id != %s AND LOWER(name) LIKE %s"
+        params = (current_user.id, f"%{search_query}%")
+
+        # Apply sorting based on filter option
+        if filter_option == "low-to-high":
+            query += " ORDER BY price ASC"
+        elif filter_option == "high-to-low":
+            query += " ORDER BY price DESC"
+
+        conn.execute(query, params)
+        products = conn.fetchall()
+        conn.close()
+        return render_template('consumer.html',products=products)
+        # return jsonify(products)  # Return products as JSON for frontend handling
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# @app.route('/update_product/<int:product_id>',methods=['POST','GET'])
+# def update_p(product_id):
+#     if request.method=='POST':
+#         # if 'image' not in request.files or request.files['image'].filename == '':
+#         #     flash("No file selected!", "warning")
+#         #     return redirect(url_for('update_product',product_id=product_id))
+#         print("anuroop")
+#         file = request.files['image']
+#         filename = file.filename
+#         file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+#         file.save(file_path)
+#         db_file_path = f'static/uploads/{filename}'
+#         conn=mysql.connection.cursor()
+#         conn.execute('''UPDATE products
+#                 SET name = %s, price = %s, category = %s, quantity = %s, description = %s, image_path = %s
+#                 WHERE user_id = %s AND id = %s ''',(request.form['name'], request.form['price'], request.form['category'], request.form['quantity'],
+#                  request.form['desc'], db_file_path, current_user.id, product_id))
+#         mysql.connection.commit()
+#         conn.close()
+#         return redirect(url_for('view_products'))
+#     print("anuroop 1")
+#     conn=mysql.connection.cursor()
+#     conn.execute('select * from products where product_id=%s',(product_id,))
+#     product=conn.fetchone()
+#     mysql.connection.commit()
+#     conn.close()
+#     return render_template('update_product.html',product=product)
+
+@app.route('/update_product/<int:product_id>', methods=['POST', 'GET'])
+def update_p(product_id):
+    conn = mysql.connection.cursor()
+    conn.execute('SELECT * FROM products WHERE product_id = %s', (product_id,))
+    product = conn.fetchone()
+    conn.close()
+
+    if request.method == 'POST':
+        file = request.files.get('image')
+        if file and file.filename != '':
+            filename = file.filename
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(file_path)
+            db_file_path = f'static/uploads/{filename}'
+        else:
+            db_file_path = product[7]  # Keep existing image if no new file is uploaded
+
+        conn = mysql.connection.cursor()
+        conn.execute('''
+            UPDATE products 
+            SET name = %s, price = %s, category = %s, quantity = %s, description = %s, image_path = %s
+            WHERE user_id = %s AND product_id = %s
+        ''', (request.form['name'], request.form['price'], request.form['category'], request.form['quantity'],
+              request.form['desc'], db_file_path, current_user.id, product_id))
+
+        mysql.connection.commit()
+        conn.close()
+        return redirect(url_for('view_products' ))
+
+    return render_template('update_product.html', product=product)
+
 
 if __name__ == '__main__':
     # UserAuth.create_user_table()

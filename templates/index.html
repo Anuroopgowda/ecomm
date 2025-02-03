@@ -4,41 +4,82 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login</title>
-    <link rel="stylesheet" href="static/style/style.css">
+
+    <!-- Bootstrap & FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style/style1.css') }}">
+
     <script>
-        window.onload = function() {
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        alert("{{ message }}");
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
-        };
+        function showLoading() {
+            document.getElementById("loading").style.display = "block";
+        }
     </script>
 </head>
 <body>
-    <div class="container">
-        <h1>Welcome</h1>
-        <form action="/login" method="post">
-            <label>Email:</label>
-            <input type="email" name="email" required><br>
 
-            <label>Password:</label>
-            <input type="password" name="password" required><br>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo">
+        <h2>Welcome to MyStore</h2>
+        <p>Login to continue</p>
+    </div>
 
-            <label>Account Type:</label>
-            <select name="account_type" required>
-                <option value="business">Business Account</option>
-                <option value="consumer">Consumer Account</option>
-            </select><br>
+    <!-- Login Container -->
+    <div class="login-container">
+        <div class="login-box">
+            <h1>Login</h1>
 
-            <button type="submit">Login</button>
-        </form>
-        <div class="new-user-section">
-            <p>New User?</p>
-            <a class="new-user-button" href="{{ url_for('register') }}">Register</a>
+            <!-- Flash Messages -->
+            <!-- Flash Messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <div class="alert-container">
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endwith %}
+
+
+            <form action="/login" method="post" onsubmit="showLoading()">
+                <div class="mb-3 input-group">
+                    <i class="fa fa-envelope"></i>
+                    <input type="email" name="email" class="form-control" placeholder="Enter your email" required>
+                </div>
+
+                <div class="mb-3 input-group">
+                    <i class="fa fa-lock"></i>
+                    <input type="password" name="password" class="form-control" placeholder="Enter your password" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Account Type:</label>
+                    <select name="account_type" class="form-select" required>
+                        <option value="business">Business Account</option>
+                        <option value="consumer">Consumer Account</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Login</button>
+                <div id="loading" class="loading" style="display: none;">Logging in... Please wait</div>
+            </form>
+
+            <div class="new-user-section">
+                <p>New User?</p>
+                <a href="{{ url_for('register') }}">Register</a>
+            </div>
         </div>
     </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
 </body>
 </html>

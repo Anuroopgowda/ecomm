@@ -1,0 +1,177 @@
+/* General Styles */
+body {
+    display: flex;
+    height: 100vh;
+    font-family: 'Poppins', sans-serif;
+    position: relative;
+    background: #f4f4f4; /* Light background for login & registration area */
+}
+
+/* Sidebar */
+.sidebar {
+    width: 35%;
+    background: url('/static/images/ecommerce-bg.jpg') no-repeat center center;
+    background-size: cover;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    color: white;
+    text-align: center;
+    height: 100vh;
+    position: relative;
+}
+
+/* Sidebar Overlay for Readability */
+.sidebar::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1;
+}
+
+/* Sidebar Content */
+.sidebar * {
+    position: relative;
+    z-index: 2;
+}
+
+.sidebar img {
+    width: 120px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    animation: fadeIn 1s ease-in-out;
+}
+
+.sidebar h2 {
+    font-size: 26px;
+    margin-bottom: 10px;
+    font-weight: 600;
+    animation: slideInLeft 1s ease-in-out;
+}
+
+/* Registration Container */
+.login-container {
+    width: 65%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Glassmorphism Form Box */
+.login-box {
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(15px);
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0px 6px 15px rgba(0, 0, 0, 0.2);
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    animation: fadeInUp 1s ease-in-out;
+}
+
+/* Form Styling */
+.form-label {
+    font-weight: 600;
+    color: #333;
+    text-align: left;
+    display: block;
+    margin-bottom: 5px;
+}
+
+/* Input Group with Icons */
+.input-group {
+    position: relative;
+}
+
+.input-group i {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: rgba(0, 0, 0, 0.6);
+    font-size: 16px;
+}
+
+.form-control {
+    border-radius: 8px;
+    padding: 12px 12px 12px 40px;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    background: rgba(255, 255, 255, 0.8);
+    color: black;
+    transition: all 0.3s ease-in-out;
+}
+
+.form-control::placeholder {
+    color: rgba(0, 0, 0, 0.5);
+}
+
+.form-control:focus {
+    border-color: #ff9f1c;
+    box-shadow: 0 0 10px rgba(255, 159, 28, 0.5);
+}
+
+/* Buttons */
+.btn-primary {
+    width: 100%;
+    background: #ff9f1c;
+    border: none;
+    padding: 12px;
+    font-size: 18px;
+    border-radius: 8px;
+    transition: all 0.3s ease-in-out;
+    color: white;
+    font-weight: bold;
+}
+
+.btn-primary:hover {
+    background: #ffbf69;
+    transform: scale(1.05);
+}
+
+/* Loading Animation on Submit */
+.loading {
+    display: none;
+    margin-top: 10px;
+    color: black;
+    font-size: 14px;
+}
+
+/* New User Section */
+.new-user-section {
+    margin-top: 15px;
+    font-size: 14px;
+    color: black;
+}
+
+.new-user-section a {
+    text-decoration: none;
+    font-weight: bold;
+    color: #ff9f1c;
+    transition: color 0.3s ease-in-out;
+}
+
+.new-user-section a:hover {
+    color: #ff7b00;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    body {
+        flex-direction: column;
+    }
+    .sidebar {
+        width: 100%;
+        height: 30%;
+    }
+    .login-container {
+        width: 100%;
+    }
+}

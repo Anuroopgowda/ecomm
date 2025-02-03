@@ -1,140 +1,168 @@
+/* General Styles */
 body {
-    font-family: Arial, sans-serif;
-    background-color: #f4f4f4;
     display: flex;
-    justify-content: center;
-    align-items: center;
     height: 100vh;
-    margin: 0;
+    font-family: 'Poppins', sans-serif;
+    position: relative;
+    background: #f4f4f4;
 }
 
-.container {
-    background: white;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    text-align: center;
-    width: 300px;
-}
-
-h1 {
-    margin-bottom: 20px;
-}
-
-label {
-    display: block;
-    margin: 10px 0 5px;
-}
-
-input, select {
-    width: 100%;
-    padding: 8px;
-    margin-bottom: 10px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-}
-
-button {
-    background-color: #28a745;
-    color: white;
-    border: none;
-    padding: 10px;
-    width: 100%;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 16px;
-}
-
-button:hover {
-    background-color: #218838;
-}
-
-a {
-    display: block;
-    margin-top: 15px;
-    color: #007bff;
-    text-decoration: none;
-}
-
-a:hover {
-    text-decoration: underline;
-}
-
-/* Flash message styling */
-.flash-message {
-    position: fixed;
-    top: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: #ff4d4d;
-    color: white;
-    padding: 10px;
-    border-radius: 5px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.1);
-
-/* Reset default margin and padding */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-/* Set basic styles */
-body {
-    font-family: Arial, sans-serif;
-    background-color: #f4f4f9;
+/* Sidebar */
+.sidebar {
+    width: 25%;
+    background: url('/static/images/ecommerce-bg.jpg') no-repeat center center;
+    background-size: cover;
     display: flex;
-    justify-content: center;
+    flex-direction: column;
     align-items: center;
-    height: 100vh;
-    margin: 0;
-}
-
-/* Form container styling */
-.form-container {
-    background-color: #fff;
-    padding: 30px;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    width: 300px;
-}
-
-/* Heading styling */
-h1 {
+    justify-content: center;
+    padding: 40px;
+    color: white;
     text-align: center;
-    margin-bottom: 20px;
-    color: #333;
+    height: 100vh;
+    position: relative;
 }
 
-/* Label and input field styling */
-label {
-    display: block;
-    margin: 8px 0 5px;
-    color: #333;
-}
-
-input {
+/* Sidebar Overlay */
+.sidebar::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
-    padding: 8px;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 1;
+}
+
+/* Sidebar Content */
+.sidebar * {
+    position: relative;
+    z-index: 2;
+}
+
+.sidebar img {
+    width: 100px;
+    border-radius: 10px;
     margin-bottom: 15px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 14px;
+    animation: fadeIn 1s ease-in-out;
 }
 
-/* Button styling */
-button {
+.sidebar h2 {
+    font-size: 22px;
+    margin-bottom: 10px;
+    font-weight: 600;
+    animation: slideInLeft 1s ease-in-out;
+}
+
+/* Sidebar Buttons */
+.btn-sidebar {
     width: 100%;
     padding: 10px;
-    background-color: #007BFF;
+    margin: 8px 0;
+    background: rgba(255, 255, 255, 0.2);
     color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-size: 16px;
+    border-radius: 6px;
+    transition: all 0.3s ease-in-out;
 }
 
-button:hover {
-    background-color:#0056b3;
+.btn-sidebar i {
+    margin-right: 10px;
 }
 
+.btn-sidebar:hover {
+    background: rgba(255, 255, 255, 0.4);
+}
+
+/* Dashboard Content */
+.dashboard-container {
+    width: 75%;
+    padding: 40px;
+}
+
+.dashboard-container h1 {
+    font-size: 26px;
+    font-weight: 600;
+    margin-bottom: 20px;
+}
+
+/* Orders Card */
+.orders-card {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(10px);
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0px 6px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Orders Table */
+.order-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+.order-table th, .order-table td {
+    padding: 10px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+.order-table th {
+    background: #ff9f1c;
+    color: white;
+}
+
+.order-table tr:hover {
+    background: rgba(255, 159, 28, 0.2);
+}
+
+/* Delivered Status */
+.delivered-text {
+    color: green;
+    font-weight: bold;
+}
+
+/* Deliver Button */
+.btn-deliver {
+    background: #ff9f1c;
+    border: none;
+    padding: 8px 12px;
+    color: white;
+    font-size: 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+}
+
+.btn-deliver:hover {
+    background: #ffbf69;
+}
+
+/* No Orders Message */
+.no-orders {
+    text-align: center;
+    font-size: 16px;
+    font-weight: 500;
+    color: #555;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    body {
+        flex-direction: column;
+    }
+    .sidebar {
+        width: 100%;
+        height: auto;
+    }
+    .dashboard-container {
+        width: 100%;
+        padding: 20px;
+    }
+}

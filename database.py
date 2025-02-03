@@ -74,6 +74,19 @@ class UserAuth:
             print(f"Error retrieving user by ID: {e}")
             return None
 
+    @staticmethod
+    def user_exists(email, mobile_number):
+        cursor=mysql.connection.cursor()
+        success=cursor.execute('select * from userAuth where email=%s or mobile_number=%s',(email, mobile_number,))
+        mysql.connection.commit()
+        cursor.close()
+        if success:
+            return True
+        else:
+            return False
+
+
+
 class Address:
     @staticmethod
     def create_address_table():

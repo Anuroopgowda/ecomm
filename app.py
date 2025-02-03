@@ -39,7 +39,7 @@ def load_user(user_id):
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return render_template('experi.html')
 
 @app.route('/register', methods=['POST', 'GET'])
 def register():

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Upload Product</title>
+    <title>Update Product</title>
 
     <!-- Tailwind CSS -->
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
@@ -15,13 +15,11 @@
     <link rel="stylesheet" href="/static/style/style.css">
 </head>
 <body class="bg-gray-100 text-gray-900">
-
     <!-- Sidebar -->
     <div id="sidebar" class="fixed top-0 left-[-280px] w-72 bg-gray-800 text-white h-full transition-all duration-300 ease-in-out z-50">
         <div class="p-6">
             <img src="/static/images/logo.png" alt="Logo" class="w-20 mb-5 mx-auto">
             <h2 class="text-2xl font-semibold text-center mb-6">Dashboard</h2>
-
             <a href="{{ url_for('business') }}" class="block py-3 px-6 hover:bg-gray-700 rounded">Business Home</a>
             <a href="{{ url_for('view_products') }}" class="block py-3 px-6 hover:bg-gray-700 rounded">My Products</a>
             <a href="{{ url_for('logout') }}" class="block py-3 px-6 hover:bg-gray-700 rounded">Logout</a>
@@ -39,38 +37,26 @@
 
         <div class="container mx-auto">
             <h1 class="text-4xl font-bold text-center mb-8">Welcome, {{ name }}</h1>
-            <h2 class="text-2xl font-semibold text-center mb-8">Upload a New Product</h2>
+            <h2 class="text-2xl font-semibold text-center mb-8">Update Product</h2>
 
             <div class="bg-white p-10 rounded-lg shadow-lg max-w-2xl mx-auto w-full">
-                {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    <div class="mb-6">
-                        {% for category, message in messages %}
-                            <div class="p-4 mb-4 text-white {{ 'bg-green-500' if category == 'success' else 'bg-red-500' }} rounded-lg">
-                                <strong>{{ message }}</strong>
-                            </div>
-                        {% endfor %}
-                    </div>
-                {% endif %}
-            {% endwith %}
-
                 <form action="" method="POST" enctype="multipart/form-data">
-
                     <!-- Product Name -->
                     <div class="mb-6">
                         <label for="name" class="block font-semibold mb-2 text-lg">Product Name:</label>
-                        <input type="text" id="name" name="name" required class="w-full p-4 border rounded-md text-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <input type="text" id="name" name="name" value="{{ product[2] }}" required class="w-full p-4 border rounded-md text-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
+
 
                     <!-- Price & Quantity -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                         <div>
                             <label for="price" class="block font-semibold mb-2 text-lg">Price:</label>
-                            <input type="number" id="price" name="price" step="0.01" required class="w-full p-4 border rounded-md text-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <input type="number" id="price" name="price" value="{{ product[3] }}" step="0.01" required class="w-full p-4 border rounded-md text-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                         </div>
                         <div>
                             <label for="quantity" class="block font-semibold mb-2 text-lg">Quantity:</label>
-                            <input type="number" id="quantity" name="quantity" required class="w-full p-4 border rounded-md text-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <input type="number" id="quantity" name="quantity" value="{{ product[5] }}" required class="w-full p-4 border rounded-md text-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                         </div>
                     </div>
 
@@ -78,26 +64,27 @@
                     <div class="mb-6">
                         <label for="category" class="block font-semibold mb-2 text-lg">Category:</label>
                         <select id="category" name="category" required class="w-full p-4 border rounded-md text-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="electronics">Electronics</option>
-                            <option value="grocery">Grocery</option>
+                            <option value="electronics" {{ 'selected' if product[4] == 'electronics' else '' }}>Electronics</option>
+                            <option value="grocery" {{ 'selected' if product[4] == 'grocery' else '' }}>Grocery</option>
                         </select>
                     </div>
 
                     <!-- Description -->
                     <div class="mb-6">
                         <label for="desc" class="block font-semibold mb-2 text-lg">Description:</label>
-                        <textarea id="desc" name="desc" rows="4" required class="w-full p-4 border rounded-md text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                        <textarea id="desc" name="desc" rows="4" required class="w-full p-4 border rounded-md text-lg focus:outline-none focus:ring-2 focus:ring-blue-500">{{ product[6] }}</textarea>
                     </div>
 
                     <!-- Image Upload -->
                     <div class="mb-8">
                         <label for="image" class="block font-semibold mb-2 text-lg">Upload Product Image:</label>
-                        <input type="file" id="image" name="image" accept="image/*" required class="w-full p-4 border rounded-md text-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <input type="file" id="image" name="image" accept="image/*" class="w-full p-4 border rounded-md text-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <p class="mt-2 text-sm text-gray-600">Current Image: {{ product[7] }}</p>
                     </div>
 
                     <!-- Submit Button -->
-                    <button type="submit" class="w-full py-4 bg-green-600 text-white text-xl rounded-md hover:bg-green-700 transition transform hover:scale-105">
-                        <i class="fas fa-upload"></i> ADD PRODUCT
+                    <button onclick="afunc()" type="submit" class="w-full py-4 bg-green-600 text-white text-xl rounded-md hover:bg-green-700 transition transform hover:scale-105">
+                        <i class="fas fa-edit"></i> UPDATE PRODUCT
                     </button>
                 </form>
             </div>
@@ -108,6 +95,10 @@
     <script src="https://kit.fontawesome.com/a076d05399.js"></script>
 
     <script>
+        function showAlert() {
+            alert("Product updated successfully!");
+            window.location.href = "{{ url_for('view_products') }}"; // Redirect after alert
+        }
         // Sidebar Toggle
         document.getElementById('toggle-btn').addEventListener('click', function () {
             const sidebar = document.getElementById('sidebar');
@@ -136,6 +127,5 @@
             mainContent.classList.remove('ml-72');
         });
     </script>
-
 </body>
 </html>
