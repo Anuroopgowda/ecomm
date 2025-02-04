@@ -134,39 +134,42 @@ window.onload = function () {
             let subtotal = parseFloat(row.querySelector(".subtotal").innerText.replace("₹", ""));
             let addressId = document.getElementById("address").value;
 
-            cartItems.push({
-                product_id: productId,
-                quantity: quantity,
-                subtotal: subtotal,
-                address_id: addressId
-            });
+            cartItems.push({ product_id: productId, quantity: quantity, subtotal: subtotal, address_id: addressId });
         });
 
         if (cartItems.length === 0) {
-            alert("Your cart is empty. Please add items before proceeding to checkout.");
+            alert("🛒 Your cart is empty. Please add items before proceeding to checkout.");
             return;
         }
 
-        console.log("Cart Data Before Sending:", cartItems);  // Debugging
+        if (!document.getElementById("address").value) {
+            alert("📍 Please select an address before proceeding.");
+            return;
+        }
 
-        document.getElementById("cart-data").value = JSON.stringify(cartItems);
-        this.submit();
+        if (confirm("✅ Are you sure you want to proceed to checkout?")) {
+            alert("🎉 Your order has been placed successfully!");
+            document.getElementById("cart-data").value = JSON.stringify(cartItems);
+            this.submit();
+        }
     });
 
-    updateTotalAmount();
+    updateTotalAmount(); // Ensure total amount is updated when the page loads
 };
 
 function applyCoupon() {
     const couponCode = document.getElementById("coupon").value.trim();
     const discountMessage = document.getElementById("discount-message");
+    let totalAmountElement = document.getElementById("total-amount");
+    let total = parseFloat(totalAmountElement.innerText.replace("₹", ""));
 
     if (couponCode === "ANU123") {
-        let total = parseFloat(document.getElementById("total-amount").innerText.replace("₹", ""));
         let discountedTotal = total * 0.95; // Apply 5% discount
-        document.getElementById("total-amount").innerText = "₹" + discountedTotal.toFixed(2);
+        totalAmountElement.innerText = "₹" + discountedTotal.toFixed(2);
         discountMessage.classList.remove("hidden");
+        alert("🎉 Coupon Applied! You got a 5% discount.");
     } else {
-        alert("Invalid coupon code. Please try again.");
+        alert("❌ Invalid coupon code. Please try again.");
         discountMessage.classList.add("hidden");
     }
 }
@@ -179,7 +182,7 @@ function updateSubtotal(selectElement) {
     let subtotal = price * quantity;
     document.getElementById(subtotalId).innerText = "₹" + subtotal.toFixed(2);
 
-    updateTotalAmount();
+    updateTotalAmount(); // Update total whenever a quantity is changed
 }
 
 function updateTotalAmount() {
@@ -187,9 +190,11 @@ function updateTotalAmount() {
     document.querySelectorAll(".subtotal").forEach(subtotalElement => {
         total += parseFloat(subtotalElement.innerText.replace("₹", "")) || 0;
     });
+
     document.getElementById("total-amount").innerText = "₹" + total.toFixed(2);
 }
 </script>
+
 
 </body>
 </html>

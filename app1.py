@@ -1,3 +1,5 @@
+import base64
+import io
 import json
 import os
 from flask import Flask, render_template, request, redirect, flash, url_for, jsonify, session
@@ -5,6 +7,11 @@ from flask_mysqldb import MySQL
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 import csv
 from database import UserAuth, Address, Product, Cart, Order
+import pandas as pd
+import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('Agg')  # Use Agg backend for non-GUI environments
+
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
@@ -40,9 +47,15 @@ def load_user(user_id):
         return User(user_data['id'], user_data['name'], user_data['email'])
     return None
 
-
-
 @app.route('/')
+def home():
+    cur=mysql.connection.cursor()
+    cur.execute('select * from products where quantity>0')
+    products=cur.fetchall()
+    return render_template('home.html',products=products)
+
+
+@app.route('/index')
 def index():
     return render_template('index.html')
 
@@ -204,7 +217,7 @@ def consumer():
     cursor.execute("SELECT * FROM products WHERE user_id!=%s AND quantity > 0", (current_user.id,))
     products = cursor.fetchall()
     cursor.close()
-    return render_template('consumer.html', products=products)
+    return render_template('consumer.html', products=products,name=current_user.name)
 
 @app.route('/upload', methods=['POST', 'GET'])
 @login_required
@@ -293,7 +306,9 @@ def delete(product_id):
 def logout():
     logout_user()
     flash("You have been logged out.", "info")
-    return redirect(url_for('index'))
+    return redirect(url_for('home'))
+
+
 
 # @app.route('/all_order')
 # @login_required
@@ -574,20 +589,51 @@ def review(product_id, user_id):
     return render_template('review.html', product_id=product_id, user_id=user_id)
 
 
+CONTACT_FILE = "contact.csv"
+
+# Ensure CSV file has headers
+if not os.path.exists(CONTACT_FILE):
+    with open(CONTACT_FILE, 'w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(["NAME", "EMAIL ID", "QUERY"])
+
+@app.route('/contact', methods=['GET', 'POST'])
+def contact():
+    if request.method == 'POST':
+        name = request.form['name']
+        email = request.form['email']
+        query = request.form['query']
+
+        # Store review in a CSV file
+        with open(CONTACT_FILE, 'a', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow([name, email, query])
+
+        return redirect(url_for('contact'))
+
+    return render_template('contact_us.html')
+
 @app.route('/search_filter', methods=['GET'])
+@login_required
 def search_filter():
     try:
-        search_query = request.args.get('query', '').strip().lower()  # Get search input
-        filter_option = request.args.get('filter', 'default')  # Get filter option
+        # Get search query, price filter, and category filter from request
+        search_query = request.args.get('query', '').strip().lower()
+        filter_option = request.args.get('filter', 'default')
+        category_filter = request.args.get('category', 'all').lower()
 
         conn = mysql.connection.cursor()
 
-        # Base query to get products
-
-        query = "SELECT * FROM products WHERE user_id != %s AND LOWER(name) LIKE %s"
+        # Base SQL query: Exclude current user's products
+        query = "SELECT * FROM products WHERE user_id != %s AND quantity > 0 AND LOWER(name) LIKE %s"
         params = (current_user.id, f"%{search_query}%")
 
-        # Apply sorting based on filter option
+        # Apply category filter
+        if category_filter != "all":
+            query += " AND LOWER(category) = %s"
+            params += (category_filter,)
+
+        # Apply sorting based on price filter
         if filter_option == "low-to-high":
             query += " ORDER BY price ASC"
         elif filter_option == "high-to-low":
@@ -596,11 +642,26 @@ def search_filter():
         conn.execute(query, params)
         products = conn.fetchall()
         conn.close()
-        return render_template('consumer.html',products=products)
-        # return jsonify(products)  # Return products as JSON for frontend handling
+
+        # Convert product data to JSON format
+        product_list = []
+        for product in products:
+            product_list.append({
+                "product_id": product[0],
+                "user_id": product[1],
+                "name": product[2],
+                "price": product[3],
+                "category": product[4],
+                "quantity": product[5],
+                "description": product[6],
+                "image_path": product[7]
+            })
+
+        return jsonify(product_list)  # Return JSON response
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": str(e)}), 500  # Return error response
+
 
 # @app.route('/update_product/<int:product_id>',methods=['POST','GET'])
 # def update_p(product_id):
@@ -661,6 +722,81 @@ def update_p(product_id):
 
     return render_template('update_product.html', product=product)
 
+
+# analysis
+
+# Sample review data
+reviews = [
+    {'product_id': 5, 'user_id': 1, 'rating': 2, 'review_text': 'good'},
+    {'product_id': 6, 'user_id': 1, 'rating': 2, 'review_text': 'good'},
+    {'product_id': 7, 'user_id': 9, 'rating': 4, 'review_text': 'good'},
+    {'product_id': 5, 'user_id': 9, 'rating': 1, 'review_text': 'bad'},
+    {'product_id': 8, 'user_id': 2, 'rating': 5, 'review_text': 'Excellent product!'},
+    {'product_id': 5, 'user_id': 3, 'rating': 3, 'review_text': 'Average quality'},
+    {'product_id': 6, 'user_id': 4, 'rating': 4, 'review_text': 'Very useful and durable'},
+    {'product_id': 7, 'user_id': 5, 'rating': 5, 'review_text': 'Highly recommended!'},
+    {'product_id': 8, 'user_id': 6, 'rating': 1, 'review_text': 'Not worth the price'},
+    {'product_id': 5, 'user_id': 7, 'rating': 4, 'review_text': 'Good value for money'},
+    {'product_id': 6, 'user_id': 8, 'rating': 3, 'review_text': 'Satisfactory performance'},
+    {'product_id': 7, 'user_id': 10, 'rating': 2, 'review_text': 'Could be better'},
+    {'product_id': 8, 'user_id': 11, 'rating': 5, 'review_text': 'Amazing! Loved it!'},
+    {'product_id': 5, 'user_id': 12, 'rating': 1, 'review_text': 'Worst experience ever'},
+    {'product_id': 6, 'user_id': 13, 'rating': 5, 'review_text': 'Superb quality!'},
+    {'product_id': 7, 'user_id': 14, 'rating': 3, 'review_text': 'Not bad, but expected better'},
+    {'product_id': 8, 'user_id': 15, 'rating': 4, 'review_text': 'Great product, good support'},
+]
+
+
+# Convert review data to a pandas DataFrame
+df = pd.DataFrame(reviews)
+# @app.route('/review_analysis/<int:product_id>', methods=['GET'])
+# def review_analysis(product_id):
+#     # Filter reviews for the given product
+#     product_reviews = df[df['product_id'] == product_id]
+#
+#     # Analyze ratings
+#     rating_analysis = product_reviews['rating'].value_counts().sort_index()
+#     rating_analysis = rating_analysis.to_dict()  # Convert to dict for JSON response
+#
+#     return jsonify(rating_analysis)
+
+@app.route('/review_analysis/<int:product_id>', methods=['GET'])
+def review_analysis(product_id):
+    product_reviews = df[df['product_id'] == product_id]
+
+    if product_reviews.empty:
+        return jsonify({"message": "No reviews found for this product"}), 404
+
+    # Analyze ratings
+    rating_analysis = product_reviews['rating'].value_counts().sort_index()
+
+    # Generate visualization
+    plt.figure(figsize=(6, 4))
+    plt.bar(rating_analysis.index, rating_analysis.values, color=['red', 'orange', 'yellow', 'lightgreen', 'green'])
+    plt.xlabel("Ratings")
+    plt.ylabel("Count")
+    plt.title(f"Review Analysis for Product {product_id}")
+    plt.xticks(range(1, 6))  # Rating scale from 1 to 5
+    plt.grid(axis='y', linestyle='--', alpha=0.7)
+
+    # Save plot to a buffer
+    buffer = io.BytesIO()
+    plt.savefig(buffer, format='png')
+    buffer.seek(0)
+    encoded_image = base64.b64encode(buffer.getvalue()).decode('utf-8')
+    buffer.close()
+    plt.close()  # Close the plot to free memory
+
+    # Recommendation based on average rating
+    avg_rating = product_reviews['rating'].mean()
+    recommendation = "Recommended" if avg_rating >= 3 else "Not Recommended"
+    print(rating_analysis.to_dict())
+    return jsonify({
+        "ratings": rating_analysis.to_dict(),
+        "average_rating": round(avg_rating, 2),
+        "recommendation": recommendation,
+        "chart": f"data:image/png;base64,{encoded_image}"
+    })
 
 if __name__ == '__main__':
     # UserAuth.create_user_table()

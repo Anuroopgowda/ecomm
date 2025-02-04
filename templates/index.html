@@ -27,6 +27,8 @@
         <p>Login to continue</p>
     </div>
 
+
+
     <!-- Login Container -->
     <div class="login-container">
         <div class="login-box">
@@ -75,6 +77,11 @@
                 <p>New User?</p>
                 <a href="{{ url_for('register') }}">Register</a>
             </div>
+            <div class="mt-6 text-center">
+            <a href="{{ url_for('home') }}" class="text-blue-600 hover:text-blue-800 font-semibold transition">
+                <i class="fas fa-home"></i> Go to Home
+            </a>
+        </div>
         </div>
     </div>
 

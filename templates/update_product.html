@@ -40,13 +40,12 @@
             <h2 class="text-2xl font-semibold text-center mb-8">Update Product</h2>
 
             <div class="bg-white p-10 rounded-lg shadow-lg max-w-2xl mx-auto w-full">
-                <form action="" method="POST" enctype="multipart/form-data">
+                <form id="update-form" action="" method="POST" enctype="multipart/form-data">
                     <!-- Product Name -->
                     <div class="mb-6">
                         <label for="name" class="block font-semibold mb-2 text-lg">Product Name:</label>
                         <input type="text" id="name" name="name" value="{{ product[2] }}" required class="w-full p-4 border rounded-md text-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
-
 
                     <!-- Price & Quantity -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -83,7 +82,7 @@
                     </div>
 
                     <!-- Submit Button -->
-                    <button onclick="afunc()" type="submit" class="w-full py-4 bg-green-600 text-white text-xl rounded-md hover:bg-green-700 transition transform hover:scale-105">
+                    <button type="submit" onclick="return confirmUpdate()" class="w-full py-4 bg-green-600 text-white text-xl rounded-md hover:bg-green-700 transition transform hover:scale-105">
                         <i class="fas fa-edit"></i> UPDATE PRODUCT
                     </button>
                 </form>
@@ -95,10 +94,14 @@
     <script src="https://kit.fontawesome.com/a076d05399.js"></script>
 
     <script>
-        function showAlert() {
-            alert("Product updated successfully!");
-            window.location.href = "{{ url_for('view_products') }}"; // Redirect after alert
+        function confirmUpdate() {
+            if (confirm("✅ Are you sure you want to update this product?")) {
+                alert("🎉 Product updated successfully!");
+                return true;
+            }
+            return false;
         }
+
         // Sidebar Toggle
         document.getElementById('toggle-btn').addEventListener('click', function () {
             const sidebar = document.getElementById('sidebar');

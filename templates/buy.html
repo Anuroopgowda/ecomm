@@ -26,7 +26,7 @@
             <a href="{{ url_for('consumer') }}" class="block py-2 px-4 hover:bg-gray-700 rounded">Home</a>
             <a href="{{ url_for('cart') }}" class="block py-2 px-4 hover:bg-gray-700 rounded">My Cart</a>
             <a href="{{ url_for('all_order') }}" class="block py-2 px-4 hover:bg-gray-700 rounded">Your Orders</a>
-            <a href="{{ url_for('add_address') }}" class="block py-2 px-4 hover:bg-gray-700 rounded">Add Address</a>
+            <a href="{{ url_for('add_address_u') }}" class="block py-2 px-4 hover:bg-gray-700 rounded">Add Address</a>
             <a href="{{ url_for('logout') }}" class="block py-2 px-4 hover:bg-gray-700 rounded">Logout</a>
         </div>
     </div>
@@ -75,7 +75,7 @@
                     </div>
 
                     <!-- Place Order Button -->
-                    <button type="submit" class="w-full py-3 bg-green-600 text-white rounded-md hover:bg-green-700 transition transform hover:scale-105">
+                    <button type="submit" id="place-order-btn" class="w-full py-3 bg-green-600 text-white rounded-md hover:bg-green-700 transition transform hover:scale-105">
                         Place Order
                     </button>
                 </form>
@@ -117,10 +117,28 @@
 
         // Auto-update total price
         document.getElementById('quantity').addEventListener('input', function () {
-            const unitPrice = {{ product[3] }};  // Fetch the product price dynamically
+            const unitPrice = {{ product[3] }};
             const quantity = this.value;
             const totalPrice = unitPrice * quantity;
             document.getElementById('total-price').textContent = totalPrice.toFixed(2);
+        });
+
+        // Alert Message on Order Placement
+        document.getElementById('order-form').addEventListener('submit', function (event) {
+            event.preventDefault(); // Prevents form submission for now
+
+            const quantity = document.getElementById('quantity').value;
+            const maxStock = {{ product[5] }};
+
+            if (quantity < 1 || quantity > maxStock) {
+                alert("Please enter a valid quantity within available stock!");
+                return;
+            }
+
+            if (confirm("Are you sure you want to place this order?")) {
+                alert("🎉 Order placed successfully!");
+                this.submit(); // Proceed with form submission
+            }
         });
     </script>
 
