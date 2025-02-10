@@ -1,11 +1,14 @@
-from flask import Flask,render_template, request
+from flask import Flask, request
 from flask_mysqldb import MySQL
 import os
+
 app=Flask(__name__)
+
 app.config['MYSQL_HOST'] = 'localhost'
 app.config['MYSQL_USER'] = 'root'
 app.config['MYSQL_PASSWORD'] = 'Anu@441461'
 app.config['MYSQL_DB'] = 'anuroop'
+
 mysql = MySQL(app)
 
 class UserAuth:
@@ -84,7 +87,6 @@ class UserAuth:
             return True
         else:
             return False
-
 
 
 class Address:
@@ -173,10 +175,6 @@ class Product:
         print("if")
         if 'image' not in request.files:
             return "No file part"
-        #
-        # file = request.files['image']
-        # name = request.form['name']
-        # price = request.form['price']
 
         if file.filename == '':
             return "No selected file"

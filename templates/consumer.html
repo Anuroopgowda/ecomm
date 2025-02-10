@@ -10,11 +10,14 @@
 
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
 </head>
 <body class="bg-gray-100 text-gray-900">
 
     <!-- Sidebar -->
-    <div id="sidebar" class="fixed top-0 left-0 w-64 bg-gray-800 text-white h-full transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out z-50">
+    <div id="sidebar" class="fixed top-0 left-0 w-64 bg-gray-800 text-white h-full transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out z-50 shadow-lg">
         <div class="p-5">
             <button id="close-sidebar" class="absolute top-4 right-4 text-white md:hidden">
                 <i class="fas fa-times"></i>
@@ -23,49 +26,69 @@
             <h2 class="text-2xl font-semibold mb-4">Shopping Dashboard</h2>
             <h2 class="text-2xl font-semibold mb-4">Welcome, {{ name }}</h2>
 
-            <a href="{{ url_for('business') }}" class="block py-2 px-4 hover:bg-gray-700 rounded">Switch Account</a>
-            <a href="{{ url_for('add_address_u') }}" class="block py-2 px-4 hover:bg-gray-700 rounded">Add Address</a>
-            <a href="{{ url_for('cart') }}" class="block py-2 px-4 hover:bg-gray-700 rounded">My Cart</a>
-            <a href="{{ url_for('all_order') }}" class="block py-2 px-4 hover:bg-gray-700 rounded">Your Orders</a>
-            <a href="{{ url_for('logout') }}" class="block py-2 px-4 hover:bg-gray-700 rounded">Logout</a>
+            <nav class="space-y-2">
+                <a href="{{ url_for('business') }}" class="block py-2 px-4 bg-blue-500 text-white rounded hover:bg-blue-700 transition-all duration-300 text-center no-underline cursor-pointer">Switch Account</a>
+<a href="{{ url_for('add_address_u') }}" class="block py-2 px-4 bg-blue-500 text-white rounded hover:bg-blue-700 transition-all duration-300 text-center no-underline cursor-pointer">Add Address</a>
+<a href="{{ url_for('cart') }}" class="block py-2 px-4 bg-blue-500 text-white rounded hover:bg-blue-700 transition-all duration-300 text-center no-underline cursor-pointer">My Cart</a>
+<a href="{{ url_for('all_order') }}" class="block py-2 px-4 bg-blue-500 text-white rounded hover:bg-blue-700 transition-all duration-300 text-center no-underline cursor-pointer">Your Orders</a>
+<a href="{{ url_for('logout') }}" class="block py-2 px-4 bg-blue-500 text-white rounded hover:bg-blue-700 transition-all duration-300 text-center no-underline cursor-pointer">Logout</a>
+
+
+            </nav>
         </div>
     </div>
 
     <!-- Sidebar Toggle Button -->
-    <button id="open-sidebar" class="fixed top-4 left-4 md:hidden bg-gray-800 text-white px-3 py-2 rounded-full">
+    <button id="open-sidebar" class="fixed top-4 left-4 md:hidden bg-gray-800 text-white px-3 py-2 rounded-full shadow-lg">
         <i class="fas fa-bars"></i>
     </button>
 
     <!-- Main Content -->
     <div id="main-content" class="md:pl-64 transition-all duration-300 ease-in-out p-8">
-        <h1 class="text-3xl font-bold mb-6 text-center">Explore Our Products</h1>
+        <div class="max-w-7xl mx-auto">
+            <h1 class="text-3xl font-bold mb-6 text-center">Explore Our Products</h1>
 
-        <!-- Search & Filter Section -->
-        <div class="flex flex-col md:flex-row justify-between items-center mb-6 space-y-4 md:space-y-0">
+            <!-- Search & Filter Section -->
+            <div class="flex flex-col md:flex-row justify-between items-center mb-6 space-y-4 md:space-y-0 md:space-x-4">
+                <input type="text" id="search-bar" placeholder="Search for products..."
+                       class="w-full md:w-1/3 p-2 border rounded-md shadow-sm focus:ring focus:ring-blue-300 focus:outline-none">
 
-            <!-- Search Bar -->
-            <input type="text" id="search-bar" placeholder="Search for products..."
-                   class="w-full md:w-1/3 p-3 border rounded-md shadow-sm focus:ring focus:ring-blue-300">
+                <select id="category-filter" class="w-full md:w-1/4 p-2 border rounded-md shadow-sm focus:ring focus:ring-blue-300 focus:outline-none">
+                    <option value="all">All Categories</option>
+                    <option value="electronics">Electronics</option>
+                    <option value="grocery">Grocery</option>
+                </select>
 
-            <!-- Category Filter -->
-            <select id="category-filter" class="p-3 border rounded-md shadow-sm">
-                <option value="all">All Categories</option>
-                <option value="electronics">Electronics</option>
-                <option value="grocery">Grocery</option>
-            </select>
+                <select id="price-filter" class="w-full md:w-1/4 p-2 border rounded-md shadow-sm focus:ring focus:ring-blue-300 focus:outline-none">
+                    <option value="default">Sort by Price</option>
+                    <option value="low-to-high">Price: Low to High</option>
+                    <option value="high-to-low">Price: High to Low</option>
+                </select>
+            </div>
 
-            <!-- Price Filter -->
-            <select id="price-filter" class="p-3 border rounded-md shadow-sm">
-                <option value="default">Sort by Price</option>
-                <option value="low-to-high">Price: Low to High</option>
-                <option value="high-to-low">Price: High to Low</option>
-            </select>
+            <!-- Products Grid -->
+            <div id="products-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                <!-- Product cards will be dynamically inserted here -->
+            </div>
         </div>
-
-        <!-- Products Grid -->
-        <div id="products-container" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6"></div>
     </div>
 
+    <!-- Review Analysis Modal -->
+    <div class="modal fade" id="reviewModal" tabindex="-1" aria-labelledby="reviewModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-gray-800 text-white">
+                    <h5 class="modal-title" id="reviewModalLabel">Review Analysis</h5>
+                    <button type="button" class="btn-close bg-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-6" id="reviewContent">
+                    <p>Loading...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
     <script>
         // Sidebar Toggle Functionality
         const sidebar = document.getElementById("sidebar");
@@ -101,26 +124,30 @@
 
                     data.forEach(product => {
                         let productCard = `
-                            <div class="product-card bg-white p-6 rounded-lg shadow-lg transition transform hover:scale-105">
+                            <div class="product-card bg-white p-4 rounded-lg shadow-lg transition transform hover:scale-105 hover:shadow-xl">
                                 <img src="${product.image_path}" alt="${product.name}" class="w-full h-48 object-cover mb-4 rounded-lg">
-                                <h3 class="text-2xl font-semibold text-gray-800 mb-2">${product.name}</h3>
-                                <p class="text-lg">Category: <span class="font-medium text-gray-800">${product.category}</span></p>
-                                <p class="text-lg">Quantity: <span class="font-medium text-gray-800">${product.quantity}</span></p>
-                                <p class="text-lg">Description: <span class="font-medium text-gray-800">${product.description}</span></p>
-                                <p class="product-price text-2xl font-bold text-green-600 mb-4">₹${product.price}</p>
+                                <h3 class="text-xl font-semibold text-gray-800 mb-2">${product.name}</h3>
+                                <p class="text-md text-gray-600">Category: <span class="font-medium text-gray-800">${product.category}</span></p>
+                                <p class="text-md text-gray-600">Quantity: <span class="font-medium text-gray-800">${product.quantity}</span></p>
+                                <p class="product-price text-xl font-bold text-green-600 mb-4">₹${product.price}</p>
 
-                                <!-- Buttons -->
                                 <div class="flex justify-between gap-4 mt-4">
                                     <a href="/add_cart/${product.product_id}"
-                                       class="text-white bg-blue-600 px-5 py-3 rounded-md hover:bg-blue-700 transition">
+                                       class="text-white bg-blue-600 px-4 py-2 rounded-md hover:bg-blue-700 transition flex-1 text-center text-sm">
                                         <i class="fas fa-cart-plus"></i> Add to Cart
                                     </a>
 
                                     <a href="/buy/${product.product_id}"
-                                       class="text-white bg-yellow-600 px-5 py-3 rounded-md hover:bg-yellow-700 transition">
+                                       class="text-white bg-yellow-600 px-4 py-2 rounded-md hover:bg-yellow-700 transition flex-1 text-center text-sm">
                                         <i class="fas fa-bolt"></i> Buy Now
                                     </a>
                                 </div>
+
+                                <!-- Review Analysis Button -->
+                                <button class="w-full mt-4 px-3 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition text-gray-800 text-sm"
+                                        onclick="openReviewModal(${product.product_id})">
+                                    <i class="fas fa-chart-bar me-2"></i> Review Analysis
+                                </button>
                             </div>
                         `;
                         productsContainer.innerHTML += productCard;
@@ -129,10 +156,25 @@
                 .catch(error => console.error("Error fetching products:", error));
         }
 
-        // Initial Load of Products
         fetchProducts();
+
+        // Review Analysis Modal
+        function openReviewModal(productId) {
+            // Load review analysis into the modal
+            $("#reviewContent").html("<p>Loading...</p>");
+            $.get(`/review_analysis/${productId}`, function(data) {
+                $("#reviewContent").html(data);
+            });
+
+            // Show the modal
+            var myModal = new bootstrap.Modal(document.getElementById('reviewModal'));
+            myModal.show();
+        }
     </script>
+
+    <!-- jQuery & Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 </body>
 </html>
-

@@ -1,20 +1,16 @@
-import base64
-import io
 import json
-import os
-from flask import Flask, render_template, request, redirect, flash, url_for, jsonify, session
+from flask import Flask, render_template, request, redirect, flash, url_for, jsonify
 from flask_mysqldb import MySQL
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 import csv
 from database import UserAuth, Address, Product, Cart, Order
-import pandas as pd
+import os
 import matplotlib.pyplot as plt
-import matplotlib
-matplotlib.use('Agg')  # Use Agg backend for non-GUI environments
+import pandas as pd
 
-
-app = Flask(__name__)
-app.secret_key = 'your_secret_key'
+app = Flask(__name__) #init flask application
+app.secret_key = 'Anu@441461' #Flask stores user session data (like login status) in a secure cookie.
+                               # The secret key encrypts this session data to prevent tampering.
 
 UPLOAD_FOLDER = 'static/uploads/'
 if not os.path.exists(UPLOAD_FOLDER):
@@ -27,20 +23,20 @@ app.config['MYSQL_USER'] = 'root'
 app.config['MYSQL_PASSWORD'] = 'Anu@441461'
 app.config['MYSQL_DB'] = 'anuroop'
 
-mysql = MySQL(app)
+mysql = MySQL(app) #establish connection between mysql and flask app
 
 # LoginManager Configuration
-login_manager = LoginManager()
-login_manager.init_app(app)
-login_manager.login_view = 'login'
+login_manager = LoginManager() # manage user auth and for a session keeping user logged in all request
+login_manager.init_app(app) # This links the LoginManager to the Flask application
+login_manager.login_view = 'login' # if an unauthenticated user tries to access a protected route, they are redirected to the login page.
 
-class User(UserMixin):
+class User(UserMixin): #is used for managing user authentication and session handling with Flask-Login
     def __init__(self, id, name, email):
         self.id = id
         self.name = name
         self.email = email
 
-@login_manager.user_loader
+@login_manager.user_loader  #load user details form database
 def load_user(user_id):
     user_data = UserAuth.get_user_by_id(user_id)
     if user_data:
@@ -59,20 +55,6 @@ def home():
 def index():
     return render_template('index.html')
 
-# @app.route('/register', methods=['POST', 'GET'])
-# def register():
-#     if request.method == 'POST':
-#         name = request.form['name']
-#         email = request.form['email']
-#         mobile_number = request.form['mobile_number']
-#         password = request.form['password']
-#         success = UserAuth.register_user(name, email, mobile_number, password)
-#         if success:
-#             flash("Registration successful! Please log in.", "success")
-#         else:
-#             flash("Registration failed. Try again.", "danger")
-#         return redirect(url_for('index'))
-#     return render_template('register.html')
 
 @app.route('/register', methods=['POST', 'GET'])
 def register():
@@ -250,6 +232,9 @@ def view_products():
     cursor = mysql.connection.cursor()
     cursor.execute("SELECT * FROM products WHERE user_id=%s", (current_user.id,))
     products = cursor.fetchall()
+    if not products:
+        msg='No products to display'
+        return render_template('view_products.html',msg=msg)
     cursor.close()
     return render_template('view_products.html', products=products)
 
@@ -260,12 +245,16 @@ def view_products():
 def add_cart(product_id):
     user_id = current_user.id
     Cart.add_to_cart(user_id,product_id)
-    return redirect(url_for('cart'))
+    return redirect(url_for('consumer'))
 
 
 @app.route('/cart')
 @login_required
-def cart(): 
+def cart():
+    addresses = Address.get_user_addresses(current_user.id)
+    if not addresses:
+        flash("Please add an address before placing an order.", "warning")
+        return redirect(url_for('add_address_u'))  # Redirect to the address addition page
     cursor = mysql.connection.cursor()
     addresses = Address.get_user_addresses(current_user.id)  # Fetch user addresses
     # Correct SQL query to fetch products in the cart for the current user
@@ -309,46 +298,6 @@ def logout():
     return redirect(url_for('home'))
 
 
-
-# @app.route('/all_order')
-# @login_required
-# def all_order():
-#     return render_template('view_all_order.html')
-
-
-
-
-
-
-
-# @app.route('/buy/<int:product_id>', methods=['GET', 'POST'])
-# @login_required
-# def buy(product_id):
-#     product = Product.get_product_by_id(product_id)  # Fetch product details
-#     addresses = Address.get_user_addresses(current_user.id)  # Fetch user addresses
-#
-#     # If no address is found, prompt the user to add one
-#     if not addresses:
-#         flash("Please add an address before placing an order.", "warning")
-#         return redirect(url_for('add_address'))  # Redirect to the address addition page
-#
-#     if request.method == 'POST':
-#         selected_address = request.form['address']
-#         quantity = int(request.form['quantity'])
-#         # updating the quantity of the product
-#         conn = mysql.connection.cursor()
-#         conn.execute('UPDATE products SET quantity = quantity - %s WHERE product_id = %s', (quantity, product_id))
-#         mysql.connection.commit()
-#         conn.close()
-#
-#         # Process order logic here (e.g., deduct stock, create order entry)
-#
-#         flash("Order placed successfully!", "success")
-#         return redirect(url_for('order_confirmation'))  # Redirect after placing the order
-#
-#     return render_template('buy.html', product=product, addresses=addresses)
-
-# working
 @app.route('/update_quantity/<int:product_id>/<int:quantity>', methods=['GET', 'POST'])
 def update_quantity(product_id,quantity):
     print(f"{product_id} ,{quantity}")
@@ -384,59 +333,6 @@ def buy(product_id):
 
 
     return render_template('buy.html', product=product, addresses=addresses)
-
-# cart checkout
-# @app.route('/checkout', methods=['POST'])
-# def checkout():
-#     cart = session.get('cart', [])  # Retrieve cart items from session
-#     addresses = Address.get_user_addresses(current_user.id)  # Fetch user addresses
-#
-#     if not cart:
-#         flash("Your cart is empty.", "warning")
-#         return redirect(url_for('cart'))  # Redirect to cart page if empty
-#
-#     if not addresses:
-#         flash("Please add an address before placing an order.", "warning")
-#         return redirect(url_for('add_address'))  # Redirect if no address available
-#
-#     selected_address = request.form.get('address')  # Get selected address
-#     orders = []  # Store processed orders
-#
-#     conn = mysql.connection.cursor()
-#
-#     for item in cart:
-#         product_id = item['product_id']
-#         quantity = int(request.form.get(f'quantity-{product_id}', 1))  # Get quantity per product
-#         coupon_code = request.form.get(f'coupon-{product_id}', '')  # Get coupon per product
-#
-#         product = Product.get_product_by_id(product_id)  # Fetch product details
-#
-#         if not product:
-#             flash(f"Product with ID {product_id} not found.", "danger")
-#             continue
-#
-#         price = product[3] * quantity  # Base price calculation
-#
-#         if coupon_code == "ANU123":  # Apply discount
-#             price *= 0.95  # 5% discount
-#
-#         # Insert order into database
-#         conn.execute('''INSERT INTO orders (product_id, user_id, quantity, price, address_id)
-#                         VALUES (%s, %s, %s, %s, %s)''',
-#                      (product_id, current_user.id, quantity, price, selected_address))
-#
-#         orders.append({'product_id': product_id, 'quantity': quantity})  # Store order info
-#
-#     mysql.connection.commit()
-#     conn.close()
-#
-#     # Clear cart after successful checkout
-#     session['cart'] = []
-#
-#     flash("Order placed successfully!", "success")
-#
-#     # Redirect to update quantity for all ordered products
-#     return redirect(url_for('update_quantity', orders=orders))
 
 
 @app.route('/checkout', methods=['POST'])
@@ -476,10 +372,6 @@ def checkout():
             cur.close()
             flash("Order placed successfully!", "success")
 
-
-
-
-
         return redirect(url_for("all_order"))  # Redirect to order confirmation page
 
     except Exception as e:
@@ -487,10 +379,10 @@ def checkout():
         return jsonify({"error": str(e)}), 500
 
 
-
 @app.route('/add_order', methods=['POST'])
 @login_required
 def add_order():
+
     try:
         # Parse JSON data from the frontend
         data = request.get_json()
@@ -531,7 +423,9 @@ def all_order():
         # Fetch the orders for the current user
         cursor.execute("SELECT * FROM orders WHERE user_id = %s order by order_id desc", (user_id,))
         orders = cursor.fetchall()
-
+        if not orders:
+            msg='no order'
+            return render_template('view_all_order.html',msg=msg)
         # Close cursor
         cursor.close()
 
@@ -613,6 +507,7 @@ def contact():
 
     return render_template('contact_us.html')
 
+
 @app.route('/search_filter', methods=['GET'])
 @login_required
 def search_filter():
@@ -663,33 +558,6 @@ def search_filter():
         return jsonify({"error": str(e)}), 500  # Return error response
 
 
-# @app.route('/update_product/<int:product_id>',methods=['POST','GET'])
-# def update_p(product_id):
-#     if request.method=='POST':
-#         # if 'image' not in request.files or request.files['image'].filename == '':
-#         #     flash("No file selected!", "warning")
-#         #     return redirect(url_for('update_product',product_id=product_id))
-#         print("anuroop")
-#         file = request.files['image']
-#         filename = file.filename
-#         file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-#         file.save(file_path)
-#         db_file_path = f'static/uploads/{filename}'
-#         conn=mysql.connection.cursor()
-#         conn.execute('''UPDATE products
-#                 SET name = %s, price = %s, category = %s, quantity = %s, description = %s, image_path = %s
-#                 WHERE user_id = %s AND id = %s ''',(request.form['name'], request.form['price'], request.form['category'], request.form['quantity'],
-#                  request.form['desc'], db_file_path, current_user.id, product_id))
-#         mysql.connection.commit()
-#         conn.close()
-#         return redirect(url_for('view_products'))
-#     print("anuroop 1")
-#     conn=mysql.connection.cursor()
-#     conn.execute('select * from products where product_id=%s',(product_id,))
-#     product=conn.fetchone()
-#     mysql.connection.commit()
-#     conn.close()
-#     return render_template('update_product.html',product=product)
 
 @app.route('/update_product/<int:product_id>', methods=['POST', 'GET'])
 def update_p(product_id):
@@ -722,81 +590,71 @@ def update_p(product_id):
 
     return render_template('update_product.html', product=product)
 
-
-# analysis
-
-# Sample review data
-reviews = [
-    {'product_id': 5, 'user_id': 1, 'rating': 2, 'review_text': 'good'},
-    {'product_id': 6, 'user_id': 1, 'rating': 2, 'review_text': 'good'},
-    {'product_id': 7, 'user_id': 9, 'rating': 4, 'review_text': 'good'},
-    {'product_id': 5, 'user_id': 9, 'rating': 1, 'review_text': 'bad'},
-    {'product_id': 8, 'user_id': 2, 'rating': 5, 'review_text': 'Excellent product!'},
-    {'product_id': 5, 'user_id': 3, 'rating': 3, 'review_text': 'Average quality'},
-    {'product_id': 6, 'user_id': 4, 'rating': 4, 'review_text': 'Very useful and durable'},
-    {'product_id': 7, 'user_id': 5, 'rating': 5, 'review_text': 'Highly recommended!'},
-    {'product_id': 8, 'user_id': 6, 'rating': 1, 'review_text': 'Not worth the price'},
-    {'product_id': 5, 'user_id': 7, 'rating': 4, 'review_text': 'Good value for money'},
-    {'product_id': 6, 'user_id': 8, 'rating': 3, 'review_text': 'Satisfactory performance'},
-    {'product_id': 7, 'user_id': 10, 'rating': 2, 'review_text': 'Could be better'},
-    {'product_id': 8, 'user_id': 11, 'rating': 5, 'review_text': 'Amazing! Loved it!'},
-    {'product_id': 5, 'user_id': 12, 'rating': 1, 'review_text': 'Worst experience ever'},
-    {'product_id': 6, 'user_id': 13, 'rating': 5, 'review_text': 'Superb quality!'},
-    {'product_id': 7, 'user_id': 14, 'rating': 3, 'review_text': 'Not bad, but expected better'},
-    {'product_id': 8, 'user_id': 15, 'rating': 4, 'review_text': 'Great product, good support'},
-]
+# review analysis
+# Ensure 'static/' directory exists
+STATIC_DIR = "static/chart"
+if not os.path.exists(STATIC_DIR):
+    os.makedirs(STATIC_DIR)
 
 
-# Convert review data to a pandas DataFrame
-df = pd.DataFrame(reviews)
-# @app.route('/review_analysis/<int:product_id>', methods=['GET'])
-# def review_analysis(product_id):
-#     # Filter reviews for the given product
-#     product_reviews = df[df['product_id'] == product_id]
-#
-#     # Analyze ratings
-#     rating_analysis = product_reviews['rating'].value_counts().sort_index()
-#     rating_analysis = rating_analysis.to_dict()  # Convert to dict for JSON response
-#
-#     return jsonify(rating_analysis)
-
-@app.route('/review_analysis/<int:product_id>', methods=['GET'])
+@app.route('/review_analysis/<int:product_id>')
+@login_required
 def review_analysis(product_id):
+    df = pd.read_csv('reviews.csv', on_bad_lines='skip')
     product_reviews = df[df['product_id'] == product_id]
+    print(product_reviews)
 
     if product_reviews.empty:
-        return jsonify({"message": "No reviews found for this product"}), 404
+        return "No reviews available for this product."
 
-    # Analyze ratings
-    rating_analysis = product_reviews['rating'].value_counts().sort_index()
+    # **Sentiment Classification**
+    product_reviews['sentiment'] = product_reviews['rating'].apply(
+        lambda x: 'Positive' if x >= 4 else 'Neutral' if x == 3 else 'Negative'
+    )
 
-    # Generate visualization
-    plt.figure(figsize=(6, 4))
-    plt.bar(rating_analysis.index, rating_analysis.values, color=['red', 'orange', 'yellow', 'lightgreen', 'green'])
-    plt.xlabel("Ratings")
-    plt.ylabel("Count")
-    plt.title(f"Review Analysis for Product {product_id}")
-    plt.xticks(range(1, 6))  # Rating scale from 1 to 5
-    plt.grid(axis='y', linestyle='--', alpha=0.7)
+    # **Count Sentiment Distribution**
+    sentiment_counts = product_reviews['sentiment'].value_counts()
 
-    # Save plot to a buffer
-    buffer = io.BytesIO()
-    plt.savefig(buffer, format='png')
-    buffer.seek(0)
-    encoded_image = base64.b64encode(buffer.getvalue()).decode('utf-8')
-    buffer.close()
-    plt.close()  # Close the plot to free memory
+    # **Decision Logic**
+    positive_count = sentiment_counts.get('Positive', 0)
+    neutral_count = sentiment_counts.get('Neutral', 0)
+    negative_count = sentiment_counts.get('Negative', 0)
+    total_reviews = len(product_reviews)
 
-    # Recommendation based on average rating
-    avg_rating = product_reviews['rating'].mean()
-    recommendation = "Recommended" if avg_rating >= 3 else "Not Recommended"
-    print(rating_analysis.to_dict())
-    return jsonify({
-        "ratings": rating_analysis.to_dict(),
-        "average_rating": round(avg_rating, 2),
-        "recommendation": recommendation,
-        "chart": f"data:image/png;base64,{encoded_image}"
-    })
+    if positive_count / total_reviews > 0.5:
+        recommendation = "✅ Recommended to Buy! Most users are satisfied."
+        color = "green"
+    elif negative_count / total_reviews > 0.5:
+        recommendation = "❌ Not Recommended. Too many bad reviews."
+        color = "red"
+    else:
+        recommendation = "⚠️ Mixed Reviews – Consider Carefully."
+        color = "orange"
+
+    # **Generate Donut Chart**
+    plt.figure(figsize=(6, 6))
+    colors = ['#dc3545', '#ffc107','#28a745']  # Green, Yellow, Red
+    plt.pie(
+        sentiment_counts, labels=sentiment_counts.index, autopct='%1.1f%%',
+        colors=colors, startangle=140, wedgeprops={'edgecolor': 'black'}
+    )
+    plt.gca().add_artist(plt.Circle((0, 0), 0.5, color='white'))  # Donut hole
+    plt.title(f"Sentiment Analysis for Product {product_id}")
+
+    # **Save the Plot**
+    img_path = f"static/sentiment_chart_{product_id}.png"
+    plt.savefig(img_path)
+    plt.close()
+
+    return render_template(
+        'review_analysis.html',
+        product_id=product_id,
+        recommendation=recommendation,
+        color=color,
+        img_path=img_path,
+        reviews=product_reviews.to_dict(orient='records')
+    )
+
 
 if __name__ == '__main__':
     # UserAuth.create_user_table()

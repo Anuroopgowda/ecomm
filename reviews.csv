@@ -1,5 +1,22 @@
+product_id,user_id,rating,review_text
 1,1,2,good
 1,1,2,good
 9,9,4,good
 9,9,1,bad
-
+5,1,2,good
+6,1,2,good
+7,9,4,good
+5,9,1,bad
+8,2,5,Excellent product!
+5,3,3,Average quality
+6,4,4,Very useful and durable
+7,5,5,Highly recommended!
+8,6,1,Not worth the price
+5,7,4,Good value for money
+6,8,3,Satisfactory performance
+7,10,2,Could be better
+8,11,5,Amazing! Loved it!
+5,12,1,Worst experience ever
+6,13,5,Superb quality!
+7,14,3,Not bad, but expected better
+8,15,4,Great product, good support
