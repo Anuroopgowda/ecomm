@@ -7,7 +7,7 @@ app=Flask(__name__)
 app.config['MYSQL_HOST'] = 'localhost'
 app.config['MYSQL_USER'] = 'root'
 app.config['MYSQL_PASSWORD'] = 'Anu@441461'
-app.config['MYSQL_DB'] = 'anuroop'
+app.config['MYSQL_DB'] = 'anuroop1'
 
 mysql = MySQL(app)
 
@@ -87,6 +87,21 @@ class UserAuth:
             return True
         else:
             return False
+
+    @staticmethod
+    def create_block_address():
+        """Create the userAuth table if it does not already exist."""
+        with app.app_context():
+            cursor = mysql.connection.cursor()
+            cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS blockaddress (
+                        user_id INT NOT NULL,
+                        block_address VARCHAR(100) NOT NULL,
+                        FOREIGN KEY (user_id) REFERENCES userAuth(id) ON DELETE CASCADE
+                    )
+                ''')
+            mysql.connection.commit()
+            cursor.close()
 
 
 class Address:
@@ -296,3 +311,37 @@ class Order:
             print(f"Error during product insertion: {e}")
             return False
 
+class Transaction:
+    @staticmethod
+    def create_transaction_table():
+        with app.app_context():
+            cursor = mysql.connection.cursor()
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS transaction (
+                    transaction_id INT AUTO_INCREMENT PRIMARY KEY,
+                    sender_id INT NOT NULL,
+                    receiver_id INT NOT NULL,
+                    product_id INT NOT NULL,
+                    total_price INT NOT NULL,
+                    ether_amount decimal(10,5) NOT NULL,
+                
+                    status VARCHAR(20) DEFAULT 'Done',
+                    FOREIGN KEY (sender_id) REFERENCES userAuth(id) ON DELETE CASCADE,
+                    FOREIGN KEY (receiver_id) REFERENCES userAuth(id) ON DELETE CASCADE,
+                    FOREIGN KEY (product_id) REFERENCES products(product_id) ON DELETE CASCADE
+                )
+            ''')
+
+            mysql.connection.commit()
+            cursor.close()
+
+    @staticmethod
+    def add_to_transaction(sender_id,receiver_id,product_id,total_price,ether_amount):
+        try:
+            cur=mysql.connection.cursor()
+            cur.execute('insert into transaction(sender_id,receiver_id,product_id,total_price,ether_amount) values(%s, %s, %s, %s, %s)',
+                        (sender_id,receiver_id,product_id,total_price,ether_amount))
+            mysql.connection.commit()
+            cur.close()
+        except Exception as e:
+            print(e)

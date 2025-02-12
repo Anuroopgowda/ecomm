@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ethereum Address Form</title>
+
+    <!-- Tailwind CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+    <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md text-center relative">
+        <a href="{{ url_for('business') }}" class="fixed top-4 left-4 py-2 px-4 bg-blue-500 text-white rounded hover:bg-blue-700 transition">Dashboard</a>
+        <h2 class="text-2xl font-semibold mb-4">Enter Ethereum Address</h2>
+        <h1 class="text-3xl font-bold mb-4" style="color: {{ color }};">{{ msg }}</h1>
+
+        <form action="/add_block_address" method="POST" class="space-y-4">
+            <input type="text" name="ethAddress" placeholder="Enter Ethereum Address" required
+                   class="w-full p-2 border rounded-md shadow-sm focus:ring focus:ring-blue-300 focus:outline-none">
+            <input type="text" name="ethAddressConfirm" placeholder="Re-enter Ethereum Address" required
+                   class="w-full p-2 border rounded-md shadow-sm focus:ring focus:ring-blue-300 focus:outline-none">
+
+            <label class="flex items-center justify-center space-x-2">
+                <input type="checkbox" name="confirmCheckbox" required class="form-checkbox text-blue-600">
+                <span class="text-gray-700">Confirm Address</span>
+            </label>
+
+            <button onclick="return func()" type="submit" class="w-full py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition">
+                Add
+            </button>
+        </form>
+    </div>
+</body>
+<script>
+    function func() {
+        return alert("Address added successfully!");
+}
+</script>
+</html>

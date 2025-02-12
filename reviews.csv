@@ -20,3 +20,7 @@ product_id,user_id,rating,review_text
 6,13,5,Superb quality!
 7,14,3,Not bad, but expected better
 8,15,4,Great product, good support
+1,1,5,very good product
+1,1,4,very good product
+1,1,2,very good product
+4,1,3,good product

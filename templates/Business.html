@@ -24,10 +24,14 @@
             <p class="text-sm mb-6">Manage Your Orders & Products</p>
 
             <a href="{{ url_for('consumer') }}" class="block py-2 px-4 hover:bg-gray-700 rounded">Switch Account</a>
-            <a href="{{ url_for('logout') }}" class="block py-2 px-4 hover:bg-gray-700 rounded">Logout</a>
+           <a href="{{ url_for('add_block_address') }}" class="block py-2 px-4 hover:bg-gray-700 rounded">Add Ethereum Account Address</a>
             <a href="{{ url_for('add_address') }}" class="block py-2 px-4 hover:bg-gray-700 rounded">Add Address</a>
             <a href="{{ url_for('upload') }}" class="block py-2 px-4 hover:bg-gray-700 rounded">Add Product</a>
             <a href="{{ url_for('view_products') }}" class="block py-2 px-4 hover:bg-gray-700 rounded">My Products</a>
+                        <a href="{{ url_for('transaction_b') }}" class="block py-2 px-4 hover:bg-gray-700 rounded">Transaction</a>
+            <a href="{{ url_for('logout') }}" onclick="return confirmLogout()" class="block py-2 px-4 hover:bg-gray-700 rounded">
+Logout
+</a>
         </div>
     </div>
 
@@ -136,6 +140,10 @@
             icon.classList.toggle('fa-sun');
             icon.classList.toggle('fa-moon');
         });
+
+        function confirmLogout() {
+        return confirm("Are you sure you want to logout?");
+}
     </script>
 
 </body>

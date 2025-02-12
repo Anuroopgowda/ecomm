@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transaction History</title>
+
+    <!-- Tailwind CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+</head>
+<body class="bg-gray-100 text-gray-900 flex">
+    <!-- Sidebar -->
+    <div id="sidebar" class="fixed top-0 left-0 w-64 bg-gray-800 text-white h-full md:translate-x-0 transition-transform duration-300 ease-in-out z-50 shadow-lg">
+        <div class="p-5">
+            <img src="/static/images/logo.png" alt="Logo" class="w-16 mb-4">
+            <h2 class="text-2xl font-semibold mb-4">Transaction Dashboard</h2>
+            <nav class="space-y-2">
+                <a href="{{ url_for('business') }}" class="block py-2 px-4 bg-blue-500 text-white rounded hover:bg-blue-700 transition text-center">Dashboard</a>
+                <a href="{{ url_for('logout') }}" class="block py-2 px-4 bg-blue-500 text-white rounded hover:bg-blue-700 transition text-center">Logout</a>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div id="main-content" class="flex-1 p-8 ml-64">
+        <h2 class="text-3xl font-bold text-center mb-6">Transaction History</h2>
+        <div class="overflow-x-auto">
+            <table class="min-w-full bg-white shadow-md rounded-lg overflow-hidden">
+                <thead class="bg-gray-800 text-white">
+                    <tr>
+                        <th class="py-3 px-4 text-left">Transaction ID</th>
+                        <th class="py-3 px-4 text-left">Sender ID</th>
+                        <th class="py-3 px-4 text-left">Product ID</th>
+                        <th class="py-3 px-4 text-left">Total Price</th>
+                        <th class="py-3 px-4 text-left">Ethereum Amount</th>
+                        <th class="py-3 px-4 text-left">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                <h1 class="text-5xl font-bold text-center text-blue-600 mb-6">{{ msg }}</h1>
+                    {% for transaction in transaction %}
+                    <tr class="border-b hover:bg-gray-100">
+                        <td class="py-3 px-4">{{ transaction[0] }}</td>
+                        <td class="py-3 px-4">{{ transaction[1] }}</td>
+                        <td class="py-3 px-4">{{ transaction[3] }}</td>
+                        <td class="py-3 px-4">{{ transaction[4] }}</td>
+                        <td class="py-3 px-4">{{ transaction[5] }}</td>
+                        <td class="py-3 px-4">{{ transaction[6] }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

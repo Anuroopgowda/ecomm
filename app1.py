@@ -1,12 +1,22 @@
 import json
+
+import web3
 from flask import Flask, render_template, request, redirect, flash, url_for, jsonify
 from flask_mysqldb import MySQL
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 import csv
-from database import UserAuth, Address, Product, Cart, Order
+
+from requests.adapters import DEFAULT_RETRIES
+
+from database import UserAuth, Address, Product, Cart, Order, Transaction
 import os
 import matplotlib.pyplot as plt
 import pandas as pd
+from web3 import Web3
+
+# Connect to Ganache blockchain
+ganache_url = "http://127.0.0.1:7545"  # Default Ganache RPC URL
+web3 = Web3(Web3.HTTPProvider(ganache_url))
 
 app = Flask(__name__) #init flask application
 app.secret_key = 'Anu@441461' #Flask stores user session data (like login status) in a secure cookie.
@@ -21,7 +31,7 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MYSQL_HOST'] = 'localhost'
 app.config['MYSQL_USER'] = 'root'
 app.config['MYSQL_PASSWORD'] = 'Anu@441461'
-app.config['MYSQL_DB'] = 'anuroop'
+app.config['MYSQL_DB'] = 'anuroop1'
 
 mysql = MySQL(app) #establish connection between mysql and flask app
 
@@ -192,18 +202,40 @@ def business():
         return render_template('error.html', message="Unable to fetch business orders.")
 
 
+# @app.route('/consumer')
+# @login_required
+# def consumer():
+#     cursor = mysql.connection.cursor()
+#     cursor.execute("SELECT * FROM products WHERE user_id!=%s AND quantity > 0", (current_user.id,))
+#     products = cursor.fetchall()
+#     cursor.close()
+#     return render_template('consumer.html', products=products,name=current_user.name)
+
 @app.route('/consumer')
 @login_required
 def consumer():
     cursor = mysql.connection.cursor()
+
+    # Fetch products excluding those from the current user
     cursor.execute("SELECT * FROM products WHERE user_id!=%s AND quantity > 0", (current_user.id,))
     products = cursor.fetchall()
+
+    # Fetch the total number of products in the cart for the current user
+    cursor.execute("SELECT count(cart_id) FROM cart WHERE user_id = %s", (current_user.id,))
+    cart_count = cursor.fetchone()[0] or 0  # If no items, default to 0
+    print(cart_count)
     cursor.close()
-    return render_template('consumer.html', products=products,name=current_user.name)
+    return render_template('consumer.html', products=products, name=current_user.name, cart_count=cart_count)
 
 @app.route('/upload', methods=['POST', 'GET'])
 @login_required
 def upload():
+    cur = mysql.connection.cursor()
+    cur.execute('select * from blockaddress where user_id=%s', (current_user.id,))
+    b_address = cur.fetchone()
+    if not b_address:
+        return redirect(url_for('add_block_address'))
+
     if request.method == "POST":
         if 'image' not in request.files or request.files['image'].filename == '':
             flash("No file selected!", "warning")
@@ -244,6 +276,14 @@ def view_products():
 @login_required
 def add_cart(product_id):
     user_id = current_user.id
+    # cur=mysql.connection.cursor()
+    # cur.execute('select * from cart where user_id=%s and product_id=%s',(user_id,product_id,))
+    # result=cur.fetchone()
+    # mysql.connection.close()
+    # if result:
+    #     return "<script>alert('Item already added to cart!'); window.location.href='/consumer';</script>"
+
+
     Cart.add_to_cart(user_id,product_id)
     return redirect(url_for('consumer'))
 
@@ -307,32 +347,130 @@ def update_quantity(product_id,quantity):
     cur.close()
     return redirect(url_for('all_order'))
 
+# @app.route('/buy/<int:product_id>', methods=['GET', 'POST'])
+# def buy(product_id):
+#     product = Product.get_product_by_id(product_id)  # Fetch product details
+#     addresses = Address.get_user_addresses(current_user.id)  # Fetch user addresses
+#
+#     if not addresses:
+#         flash("Please add an address before placing an order.", "warning")
+#         return redirect(url_for('add_address_u'))  # Redirect to the address addition page
+#
+#     if request.method == 'POST':
+#         selected_address = request.form['address']
+#         quantity = int(request.form['quantity'])
+#         print(f"Received quantity: {quantity}")
+#         conn = mysql.connection.cursor()
+#         conn.execute('''INSERT INTO orders (product_id, user_id, quantity, price, address_id)
+#                             VALUES (%s, %s, %s, %s, %s)''',
+#                          (product_id, current_user.id, quantity, product[3] * quantity, selected_address))
+#         mysql.connection.commit()
+#         conn.close()
+#
+#
+#         flash("Order placed successfully!", "success")
+#         return redirect(url_for('update_quantity',product_id=product_id,quantity=quantity))
+#
+#
+#     return render_template('buy.html', product=product, addresses=addresses)
+
+
+# working on it
 @app.route('/buy/<int:product_id>', methods=['GET', 'POST'])
+@login_required
 def buy(product_id):
     product = Product.get_product_by_id(product_id)  # Fetch product details
     addresses = Address.get_user_addresses(current_user.id)  # Fetch user addresses
 
     if not addresses:
         flash("Please add an address before placing an order.", "warning")
-        return redirect(url_for('add_address_u'))  # Redirect to the address addition page
+        return redirect(url_for('add_address_u'))  # Redirect to add address page
 
     if request.method == 'POST':
         selected_address = request.form['address']
         quantity = int(request.form['quantity'])
-        print(f"Received quantity: {quantity}")
-        conn = mysql.connection.cursor()
-        conn.execute('''INSERT INTO orders (product_id, user_id, quantity, price, address_id)
-                            VALUES (%s, %s, %s, %s, %s)''',
-                         (product_id, current_user.id, quantity, product[3] * quantity, selected_address))
-        mysql.connection.commit()
-        conn.close()
+        total_price = product[3] * quantity  # Assuming product[3] contains price
 
-
-        flash("Order placed successfully!", "success")
-        return redirect(url_for('update_quantity',product_id=product_id,quantity=quantity))
-
+        # Redirect to the payment page
+        return redirect(url_for('payment', product_id=product_id, quantity=quantity, total_price=total_price, address_id=selected_address))
 
     return render_template('buy.html', product=product, addresses=addresses)
+
+
+from web3 import Web3
+# DEFAULT_RECEIVER = "0xF9988540e0aDd5Ba02F052f30BFE02E197438aF5"
+@app.route('/payment', methods=['GET', 'POST'])
+@login_required
+def payment():
+    product_id = request.args.get('product_id', type=int)
+    quantity = request.args.get('quantity', type=int)
+    total_price = request.args.get('total_price', type=float)
+    address_id = request.args.get('address_id', type=int)
+
+    if request.method == 'POST':
+        product_id = request.form['product_id']
+        cur = mysql.connection.cursor()
+        cur.execute(
+            'select b.block_address,p.user_id from products p,blockaddress b where p.user_id=b.user_id and product_id= %s',
+            (product_id,))
+        addr=cur.fetchone()
+        DEFAULT_RECEIVER=addr[0]
+        receiver_id=addr[1]
+        print(DEFAULT_RECEIVER)
+        mysql.connection.commit()
+        cur.close()
+        # Simulate payment processing (Replace with real payment gateway)
+        payment_status = request.form.get('payment_status')  # This should come from your payment gateway
+        b_address=request.form['sender']
+        private_key=request.form['private_key']
+        amount=float(request.form['amount'])
+        if not web3.is_address(b_address) or not web3.is_address(DEFAULT_RECEIVER):
+            return jsonify({"status": "failed", "message": "Invalid Ethereum address"})
+
+        # Convert amount to Wei
+        value = web3.to_wei(amount, "ether")
+
+        # Get nonce (transaction count) for sender
+        nonce = web3.eth.get_transaction_count(b_address)
+
+        # Create transaction
+        txn = {
+            "nonce": nonce,
+            "to": DEFAULT_RECEIVER,
+            "value": value,
+            "gas": 21000,
+            "gasPrice": web3.to_wei("10", "gwei")
+        }
+
+        # Sign transaction with sender's private key
+        signed_txn = web3.eth.account.sign_transaction(txn, private_key)
+
+        # Send transaction
+        txn_hash = web3.eth.send_raw_transaction(signed_txn.raw_transaction)
+        if txn_hash:
+        # if payment_status == "success":
+            product_id=request.form['product_id']
+            quantity=request.form['quantity']
+            total_price=request.form['total_price']
+            address_id=request.form['address_id']
+            Transaction.add_to_transaction(current_user.id,receiver_id,product_id,total_price,amount)
+
+            conn = mysql.connection.cursor()
+            conn.execute('''INSERT INTO orders (product_id, user_id, quantity, price, address_id)
+                            VALUES (%s, %s, %s, %s, %s)''',
+                         (product_id, current_user.id, quantity, total_price, address_id))
+            mysql.connection.commit()
+            conn.close()
+
+            flash("Payment successful! Order placed successfully!", "success")
+            return redirect(url_for('update_quantity', product_id=product_id, quantity=quantity))
+        else:
+            flash("Payment failed. Please try again.", "danger")
+            return redirect(url_for('buy', product_id=product_id))
+
+    return render_template('payment.html', product_id=product_id, quantity=quantity, total_price=total_price, address_id=address_id)
+
+
 
 
 @app.route('/checkout', methods=['POST'])
@@ -382,7 +520,6 @@ def checkout():
 @app.route('/add_order', methods=['POST'])
 @login_required
 def add_order():
-
     try:
         # Parse JSON data from the frontend
         data = request.get_json()
@@ -472,7 +609,7 @@ def review(product_id, user_id):
     if request.method == 'POST':
         review_text = request.form['review']
         rating = request.form['rating']
-
+        print("review function:",product_id,user_id)
         # Store review in a CSV file
         with open(REVIEWS_FILE, 'a', newline='') as file:
             writer = csv.writer(file)
@@ -602,6 +739,7 @@ if not os.path.exists(STATIC_DIR):
 def review_analysis(product_id):
     df = pd.read_csv('reviews.csv', on_bad_lines='skip')
     product_reviews = df[df['product_id'] == product_id]
+    print(product_id)
     print(product_reviews)
 
     if product_reviews.empty:
@@ -655,11 +793,83 @@ def review_analysis(product_id):
         reviews=product_reviews.to_dict(orient='records')
     )
 
+# ethereum address
+
+
+
+
+@app.route('/add_block_address', methods=['POST', 'GET'])
+@login_required
+def add_block_address():
+    user_id = current_user.id
+    if request.method == 'POST':
+        eth_address = request.form.get('ethAddress')
+
+        # Validate Ethereum address
+        if not Web3.is_address(eth_address):
+            flash("Invalid Ethereum address!", "danger")
+            return redirect(url_for('add_block_address'))
+
+        try:
+            cur = mysql.connection.cursor()
+            cur.execute('SELECT * FROM blockaddress WHERE user_id = %s AND block_address = %s', (user_id, eth_address,))
+            existing_entry = cur.fetchone()
+            if existing_entry:
+                flash("Ethereum address already added!", "warning")
+                return redirect(url_for('add_block_address'))
+
+            cur.execute('INSERT INTO blockaddress (user_id, block_address) VALUES (%s, %s)', (user_id, eth_address,))
+            mysql.connection.commit()
+            flash("Ethereum address added successfully!", "success")
+        except Exception as e:
+            mysql.connection.rollback()
+            flash(f"Database error: {str(e)}", "danger")
+        finally:
+            cur.close()
+
+        return redirect(url_for('business'))
+    cur=mysql.connection.cursor()
+    cur.execute('select * from blockaddress where user_id=%s',(user_id,))
+    b_address=cur.fetchone()
+    if b_address:
+        msg='Ethereum address already added!'
+        color='green'
+    else:
+        msg='Please add you Ethereum address!'
+        color='red'
+    return render_template('blockaddress.html',msg=msg,color=color)
+
+
+@app.route('/transaction_b',methods=['POST','GET'])
+def transaction_b():
+    cur=mysql.connection.cursor()
+    cur.execute('select * from transaction where receiver_id=%s',(current_user.id,))
+    transaction=cur.fetchall()
+    mysql.connection.commit()
+    cur.close()
+    msg='No Transaction!'
+    if not transaction:
+        return render_template('transaction_b.html',msg=msg)
+    return render_template('transaction_b.html',transaction=transaction)
+
+@app.route('/transaction_c',methods=['POST','GET'])
+def transaction_c():
+    cur=mysql.connection.cursor()
+    cur.execute('select * from transaction where sender_id=%s',(current_user.id,))
+    transaction=cur.fetchall()
+    mysql.connection.commit()
+    cur.close()
+    msg = 'No Transaction!'
+    if not transaction:
+        return render_template('transaction_c.html',msg=msg)
+    return render_template('transaction_c.html',transaction=transaction)
 
 if __name__ == '__main__':
-    # UserAuth.create_user_table()
-    # Address.create_address_table()
-    # Product.create_product_table()
-    # Cart.create_cart_table()
-    # Order.create_order_table()
+    UserAuth.create_user_table()
+    Address.create_address_table()
+    Product.create_product_table()
+    Cart.create_cart_table()
+    Order.create_order_table()
+    UserAuth.create_block_address()
+    Transaction.create_transaction_table()
     app.run(debug=True)

@@ -29,10 +29,22 @@
             <nav class="space-y-2">
                 <a href="{{ url_for('business') }}" class="block py-2 px-4 bg-blue-500 text-white rounded hover:bg-blue-700 transition-all duration-300 text-center no-underline cursor-pointer">Switch Account</a>
 <a href="{{ url_for('add_address_u') }}" class="block py-2 px-4 bg-blue-500 text-white rounded hover:bg-blue-700 transition-all duration-300 text-center no-underline cursor-pointer">Add Address</a>
-<a href="{{ url_for('cart') }}" class="block py-2 px-4 bg-blue-500 text-white rounded hover:bg-blue-700 transition-all duration-300 text-center no-underline cursor-pointer">My Cart</a>
-<a href="{{ url_for('all_order') }}" class="block py-2 px-4 bg-blue-500 text-white rounded hover:bg-blue-700 transition-all duration-300 text-center no-underline cursor-pointer">Your Orders</a>
-<a href="{{ url_for('logout') }}" class="block py-2 px-4 bg-blue-500 text-white rounded hover:bg-blue-700 transition-all duration-300 text-center no-underline cursor-pointer">Logout</a>
+                <!-- Cart Link with Icon and Counter -->
+          <a href="{{ url_for('cart') }}" class="relative flex items-center bg-blue-500 text-white px-6 py-2 rounded-md font-semibold shadow-md hover:bg-blue-600 transition duration-300 no-underline">
+    <i class="fas fa-shopping-cart text-xl"></i>
+    <span class="ml-2 text-lg">Cart</span>
+    <span id="cart-count" class="absolute top-0 right-0 -mt-2 -mr-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-full shadow-md">{{ cart_count }}</span>
+</a>
 
+
+
+<!--<a href="{{ url_for('cart') }}" class="block py-2 px-4 bg-blue-500 text-white rounded hover:bg-blue-700 transition-all duration-300 text-center no-underline cursor-pointer">My Cart</a>-->
+<a href="{{ url_for('all_order') }}" class="block py-2 px-4 bg-blue-500 text-white rounded hover:bg-blue-700 transition-all duration-300 text-center no-underline cursor-pointer">Your Orders</a>
+                <a href="{{ url_for('transaction_c') }}" class="block py-2 px-4 bg-blue-500 text-white rounded hover:bg-blue-700 transition-all duration-300 text-center no-underline cursor-pointer">My Transactions</a>
+
+<a href="{{ url_for('logout') }}" onclick="return confirmLogout()" class="block py-2 px-4 bg-blue-500 text-white rounded hover:bg-blue-700 transition-all duration-300 text-center no-underline cursor-pointer">
+Logout
+</a>
 
             </nav>
         </div>
@@ -129,6 +141,7 @@
                                 <h3 class="text-xl font-semibold text-gray-800 mb-2">${product.name}</h3>
                                 <p class="text-md text-gray-600">Category: <span class="font-medium text-gray-800">${product.category}</span></p>
                                 <p class="text-md text-gray-600">Quantity: <span class="font-medium text-gray-800">${product.quantity}</span></p>
+                                <p class="text-md text-gray-600">Description: <span class="font-medium text-gray-800">${product.description}</span></p>
                                 <p class="product-price text-xl font-bold text-green-600 mb-4">₹${product.price}</p>
 
                                 <div class="flex justify-between gap-4 mt-4">
@@ -155,7 +168,17 @@
                 })
                 .catch(error => console.error("Error fetching products:", error));
         }
+        // Fetch Cart Count
+        function updateCartCount() {
+            fetch('/cart_count')  // Assuming you have an API endpoint returning cart count
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById("cart-count").textContent = data.count;
+                })
+                .catch(error => console.error("Error fetching cart count:", error));
+        }
 
+        updateCartCount(); //call on page load
         fetchProducts();
 
         // Review Analysis Modal
@@ -170,6 +193,9 @@
             var myModal = new bootstrap.Modal(document.getElementById('reviewModal'));
             myModal.show();
         }
+        function confirmLogout() {
+        return confirm("Are you sure you want to logout?");
+}
     </script>
 
     <!-- jQuery & Bootstrap JS -->
