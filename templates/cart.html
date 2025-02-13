@@ -38,6 +38,9 @@
         <div class="container mx-auto">
             <h1 class="text-3xl font-bold text-center mb-6">My Cart</h1>
 
+
+
+
             <div class="overflow-x-auto">
                 <table class="min-w-full bg-white shadow-md rounded-lg">
                     <thead>
@@ -54,7 +57,7 @@
                         {% for product in products %}
                             {% set price = product[3] | float %}
                             {% set subtotal = price %}
-                            <tr class="border-b cart-item" data-product-id="{{ product[8] }}">
+                            <tr class="border-b cart-item" data-product-id="{{ product[0] }}">
                                 <td class="py-3 px-4">
                                     <img src="{{ product[7] }}" alt="{{ product[2] }}" class="w-12 h-12 object-cover rounded-md">
                                 </td>
@@ -104,16 +107,29 @@
                         {% endfor %}
                     </select>
                     <input type="hidden" name="cart_data" id="cart-data">
-                    <button type="submit" class="bg-green-600 text-white px-6 py-3 rounded-md hover:bg-green-700">
-                        Proceed to Checkout
-                    </button>
+<!--                    <button type="submit" class="bg-green-600 text-white px-6 py-3 rounded-md hover:bg-green-700">-->
+<!--                        Pay on Delivery-->
+<!--                    </button>-->
                 </form>
+
+                <form id="buy-all-form" action="{{ url_for('buy_all') }}" method="POST" class="mt-4">
+        <label for="buy-all-address" class="block text-lg font-semibold mb-2">Select Address:</label>
+        <select name="address_id" id="buy-all-address" required class="p-2 border rounded-md w-64 mb-4">
+            {% for address in address %}
+                <option value="{{ address[0] }}">{{ address[2] }}</option>
+            {% endfor %}
+        </select>
+        <input type="hidden" name="cart_data" id="buy-all-cart-data">
+        <button type="submit" class="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700">
+            Proceed to Checkout
+        </button>
+    </form>
             </div>
         </div>
     </div>
 
 <script>
-window.onload = function () {
+    window.onload = function () {
     document.querySelectorAll(".quantity-select").forEach(select => {
         select.addEventListener("change", function () {
             updateSubtotal(this);
@@ -125,37 +141,45 @@ window.onload = function () {
     });
 
     document.getElementById("checkout-form").addEventListener("submit", function (event) {
-        event.preventDefault();
-
-        let cartItems = [];
-        document.querySelectorAll("tr.cart-item").forEach(row => {
-            let productId = row.dataset.productId;
-            let quantity = row.querySelector(".quantity-select").value;
-            let subtotal = parseFloat(row.querySelector(".subtotal").innerText.replace("₹", ""));
-            let addressId = document.getElementById("address").value;
-
-            cartItems.push({ product_id: productId, quantity: quantity, subtotal: subtotal, address_id: addressId });
-        });
-
-        if (cartItems.length === 0) {
-            alert("🛒 Your cart is empty. Please add items before proceeding to checkout.");
-            return;
-        }
-
-        if (!document.getElementById("address").value) {
-            alert("📍 Please select an address before proceeding.");
-            return;
-        }
-
-        if (confirm("✅ Are you sure you want to proceed to checkout?")) {
-            alert("🎉 Your order has been placed successfully!");
-            document.getElementById("cart-data").value = JSON.stringify(cartItems);
-            this.submit();
-        }
+        handleCheckout(event, "cart-data", "checkout-form");
     });
 
-    updateTotalAmount(); // Ensure total amount is updated when the page loads
+    document.getElementById("buy-all-form").addEventListener("submit", function (event) {
+        handleCheckout(event, "buy-all-cart-data", "buy-all-form");
+    });
+
+    updateTotalAmount();
 };
+
+function handleCheckout(event, cartDataId, formId) {
+    event.preventDefault();
+
+    let cartItems = [];
+    document.querySelectorAll("tr.cart-item").forEach(row => {
+        let productId = row.dataset.productId;
+        let quantity = row.querySelector(".quantity-select").value;
+        let subtotal = parseFloat(row.querySelector(".subtotal").innerText.replace("₹", ""));
+        let addressId = document.getElementById("address").value || document.getElementById("buy-all-address").value;
+
+        cartItems.push({ product_id: productId, quantity: quantity, subtotal: subtotal, address_id: addressId });
+    });
+
+    if (cartItems.length === 0) {
+        alert("🛒 Your cart is empty. Please add items before proceeding.");
+        return;
+    }
+
+    if (!document.getElementById(cartDataId.replace("cart-data", "address")).value) {
+        alert("📍 Please select an address before proceeding.");
+        return;
+    }
+
+    if (confirm("✅ Are you sure you want to proceed?")) {
+        alert("🎉 Your order has been placed successfully!");
+        document.getElementById(cartDataId).value = JSON.stringify(cartItems);
+        document.getElementById(formId).submit();
+    }
+}
 
 function applyCoupon() {
     const couponCode = document.getElementById("coupon").value.trim();
@@ -164,7 +188,7 @@ function applyCoupon() {
     let total = parseFloat(totalAmountElement.innerText.replace("₹", ""));
 
     if (couponCode === "ANU123") {
-        let discountedTotal = total * 0.95; // Apply 5% discount
+        let discountedTotal = total * 0.95;
         totalAmountElement.innerText = "₹" + discountedTotal.toFixed(2);
         discountMessage.classList.remove("hidden");
         alert("🎉 Coupon Applied! You got a 5% discount.");
@@ -182,7 +206,7 @@ function updateSubtotal(selectElement) {
     let subtotal = price * quantity;
     document.getElementById(subtotalId).innerText = "₹" + subtotal.toFixed(2);
 
-    updateTotalAmount(); // Update total whenever a quantity is changed
+    updateTotalAmount();
 }
 
 function updateTotalAmount() {
@@ -193,8 +217,8 @@ function updateTotalAmount() {
 
     document.getElementById("total-amount").innerText = "₹" + total.toFixed(2);
 }
-</script>
 
+</script>
 
 </body>
 </html>

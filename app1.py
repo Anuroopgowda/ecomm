@@ -1,7 +1,7 @@
 import json
 
 import web3
-from flask import Flask, render_template, request, redirect, flash, url_for, jsonify
+from flask import Flask, render_template, request, redirect, flash, url_for, jsonify, session, abort
 from flask_mysqldb import MySQL
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 import csv
@@ -517,6 +517,7 @@ def checkout():
         return jsonify({"error": str(e)}), 500
 
 
+
 @app.route('/add_order', methods=['POST'])
 @login_required
 def add_order():
@@ -558,7 +559,8 @@ def all_order():
         user_id = current_user.id
 
         # Fetch the orders for the current user
-        cursor.execute("SELECT * FROM orders WHERE user_id = %s order by order_id desc", (user_id,))
+        # cursor.execute("SELECT * FROM orders WHERE user_id = %s order by order_id desc", (user_id,))
+        cursor.execute("select o.*,p.name,u.address from orders o left join products p on o.product_id=p.product_id left join useraddress u on o.address_id=u.address_id where o.user_id=%s order by o.order_id desc",(user_id,))
         orders = cursor.fetchall()
         if not orders:
             msg='no order'
@@ -566,17 +568,17 @@ def all_order():
         # Close cursor
         cursor.close()
 
-        cur1=mysql.connection.cursor()
-        cur1.execute('select name from products where product_id=%s',(orders[0][2],))
-        product_name=cur1.fetchall()
-        cur1.close()
-
-        cur2=mysql.connection.cursor()
-        cur2.execute('select address from userAddress where address_id=%s',(orders[0][5],))
-        address_d=cur2.fetchall()
-        cur2.close()
+        # cur1=mysql.connection.cursor()
+        # cur1.execute('select name from products where product_id=%s',(orders[0][2],))
+        # product_name=cur1.fetchall()
+        # cur1.close()
+        #
+        # cur2=mysql.connection.cursor()
+        # cur2.execute('select address from userAddress where address_id=%s',(orders[0][5],))
+        # address_d=cur2.fetchall()
+        # cur2.close()
         # Render the view_all_order.html page with the fetched orders
-        return render_template('view_all_order.html', orders=orders,product_name=product_name,address_d=address_d)
+        return render_template('view_all_order.html', orders=orders)
 
     except Exception as e:
         print(f"Error: {e}")
@@ -864,12 +866,115 @@ def transaction_c():
         return render_template('transaction_c.html',msg=msg)
     return render_template('transaction_c.html',transaction=transaction)
 
+
+@app.route('/buy_all', methods=['POST', 'GET'])
+@login_required
+def buy_all():
+    if request.method == "POST":
+        cart_data = request.form.get("cart_data")  # For form submission
+        if not cart_data:
+            return abort(400, "Error: cart_data is missing")  # Proper error handling
+
+        try:
+            cart_items = json.loads(cart_data)  # Parse JSON
+            print("new",cart_items)  # Debugging
+            return render_template('buy_all.html', cart_items=cart_items)
+        except json.JSONDecodeError as e:
+            return abort(400, f"JSON Decode Error: {str(e)}")
+
+    return abort(405, "Method Not Allowed")
+
+@app.route('/payment_all', methods=['POST'])
+@login_required
+def payment_all():
+    cart_data = request.form.get("cart_data")
+    total_price = request.form.get("total_price")
+    total_eth = request.form.get("total_eth")
+    sender = request.form.get("eth_address")
+    private_key = request.form.get("private_key")
+
+    if not all([cart_data, total_price, total_eth, sender, private_key]):
+        return abort(400, "Error: Missing required data")
+
+    try:
+        cart_items = json.loads(cart_data)  # Parse JSON
+        print("Received Cart Data:", cart_items)  # Print data to terminal
+        print("Total Price:", total_price)
+        print("Total ETH Amount:", total_eth)
+        print("Ethereum Address:", sender)
+        print("Private Key:", private_key)
+
+        if not web3.is_address(sender):
+            return jsonify({"status": "failed", "message": "Invalid Ethereum sender address"})
+
+        conn = mysql.connection.cursor()
+
+        for index, cart in enumerate(cart_items):
+            conn.execute('''SELECT b.block_address, p.user_id FROM products p 
+                            JOIN blockaddress b ON p.user_id = b.user_id 
+                            WHERE product_id = %s''', (cart['product_id'],))
+            addr = conn.fetchone()
+
+            if not addr:
+                print(f"Product ID {cart['product_id']} not found, skipping!")
+                continue
+
+            print('Product Owner Address:', addr)
+
+            amount_eth = (cart['subtotal'] / float(total_price)) * float(total_eth)
+            value = web3.to_wei(amount_eth, "ether")
+
+            # nonce = web3.eth.get_transaction_count(sender) + index
+            # gas_price = web3.eth.gas_price
+            min_gas_price = web3.to_wei(10, "gwei")  # Minimum Gas Price
+            gas_price = max(int(web3.eth.gas_price * 1.2), min_gas_price)  # Increase by 20%
+
+            nonce = web3.eth.get_transaction_count(sender, "pending")  # Ensure correct nonce
+
+            txn = {
+                "nonce": nonce,
+                "to": addr[0],
+                "value": value,
+                "gas": 21000,
+                "gasPrice": gas_price
+            }
+
+            print(f"Signing transaction for {cart['product_id']}...")
+            signed_txn = web3.eth.account.sign_transaction(txn, private_key)
+            txn_hash = web3.eth.send_raw_transaction(signed_txn.raw_transaction)
+
+            if txn_hash:
+                print(f"Transaction successful for product {cart['product_id']}")
+                Transaction.add_to_transaction(current_user.id, addr[1], cart['product_id'], cart['subtotal'],
+                                               amount_eth)
+
+                conn.execute('''INSERT INTO orders (product_id, user_id, quantity, price, address_id)
+                                VALUES (%s, %s, %s, %s, %s)''',
+                             (cart['product_id'], current_user.id, cart['quantity'], cart['subtotal'],
+                              cart['address_id']))
+                mysql.connection.commit()
+                conn.execute('''delete from cart where product_id=%s''',
+                             (cart['product_id'],))
+                mysql.connection.commit()
+                conn.execute('update products set quantity=quantity-%s where product_id=%s', (cart['quantity'], cart['product_id'],))
+                mysql.connection.commit()
+
+        conn.close()
+        flash("Payment successful! Orders placed successfully!", "success")
+        return redirect(url_for('all_order'))
+
+    except json.JSONDecodeError as e:
+        return abort(400, f"JSON Decode Error: {str(e)}")
+    except Exception as e:
+        return abort(500, f"Server Error: {str(e)}")
+
+
 if __name__ == '__main__':
-    UserAuth.create_user_table()
-    Address.create_address_table()
-    Product.create_product_table()
-    Cart.create_cart_table()
-    Order.create_order_table()
-    UserAuth.create_block_address()
-    Transaction.create_transaction_table()
+    # UserAuth.create_user_table()
+    # Address.create_address_table()
+    # Product.create_product_table()
+    # Cart.create_cart_table()
+    # Order.create_order_table()
+    # UserAuth.create_block_address()
+    # Transaction.create_transaction_table()
     app.run(debug=True)

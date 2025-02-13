@@ -60,10 +60,10 @@
                             {% for order in orders %}
                                 <tr class="border-b">
                                     <td class="py-3 px-4">{{ order[0] }}</td>
-                                    <td class="py-3 px-4">{{ product_name[0][0] }}</td>
+                                    <td class="py-3 px-4">{{ order[7] }}</td>
                                     <td class="py-3 px-4">{{ order[4] }}</td>
                                     <td class="py-3 px-4">₹{{ order[3] }}</td>
-                                    <td class="py-3 px-4">{{ address_d[0][0] }}</td>
+                                    <td class="py-3 px-4">{{ order[8] }}</td>
                                     <td class="py-3 px-4">
                                         {% if order[6] == "Delivered" %}
                                             <span class="text-green-600 font-semibold">Delivered</span>

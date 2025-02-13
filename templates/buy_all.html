@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buy All Items</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+</head>
+<body class="bg-gray-100 text-gray-900 flex items-center justify-center min-h-screen">
+    <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-2xl">
+        <h2 class="text-2xl font-semibold mb-4 text-center">Your Cart</h2>
+        {% if cart_items %}
+        <div class="overflow-x-auto">
+            <table class="w-full border border-gray-300 rounded-lg overflow-hidden">
+                <thead>
+                    <tr class="bg-gray-200 text-gray-700">
+                        <th class="p-2">Product ID</th>
+                        <th class="p-2">Quantity</th>
+                        <th class="p-2">Subtotal</th>
+                        <th class="p-2">Address ID</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in cart_items %}
+                    <tr class="border-t">
+                        <td class="p-2">{{ item.product_id }}</td>
+                        <td class="p-2">{{ item.quantity }}</td>
+                        <td class="p-2">₹{{ item.subtotal }}</td>
+                        <td class="p-2">{{ item.address_id }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% set total_price = cart_items | sum(attribute='subtotal') %}
+        <div class="text-right mt-4">
+            <h4 class="text-lg font-medium">Total Price: ₹{{ total_price }}</h4>
+        </div>
+        <form action="{{ url_for('payment_all') }}" method="POST" class="mt-6 space-y-4">
+            <input type="hidden" name="cart_data" value='{{ cart_items | tojson }}'>
+            <input type="hidden" name="total_price" value='{{ total_price }}'>
+
+            <div>
+                <label for="eth_address" class="block text-gray-700">Ethereum Address:</label>
+                <input type="text" id="eth_address" name="eth_address" required
+                       class="w-full p-2 border rounded-md shadow-sm focus:ring focus:ring-blue-300 focus:outline-none">
+            </div>
+
+            <div>
+                <label for="private_key" class="block text-gray-700">Private Key:</label>
+                <input type="password" id="private_key" name="private_key" required
+                       class="w-full p-2 border rounded-md shadow-sm focus:ring focus:ring-blue-300 focus:outline-none">
+            </div>
+
+            <button type="submit" class="w-full py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition">
+                <i class="fas fa-paper-plane"></i> Proceed to Payment
+            </button>
+        </form>
+        <form action="{{ url_for('cart') }}" class="mt-4">
+            <button type="submit" class="w-full py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition">
+                <i class="fas fa-times"></i> Cancel
+            </button>
+        </form>
+        {% else %}
+        <p class="text-center text-gray-700">Your cart is empty!</p>
+        {% endif %}
+    </div>
+</body>
+</html>
